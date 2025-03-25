@@ -10,4 +10,9 @@
     <color name="green">#008000</color>
     <color name="orange">#FF7F50</color>
     <color name="orangeDark">#B13102</color>
+    <color name="bluePrototype">#6C63FF</color>
+    <color name="blackPrototype">#252525</color>
+    <color name="redPrototype">#FF5B5B</color>
+    <color name="greyPrototype">#9DB2CE</color>
+    <color name="whitePrototype">#EBEBEB</color>
 </resources>
