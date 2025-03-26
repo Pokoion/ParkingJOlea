@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores principales -->
+    <color name="colorPrimary">#6C63FF</color>
+    <color name="colorPrimaryVariant">#4A4AE4</color>
+    <color name="colorOnPrimary">#000000</color>
+
+    <!-- Colores secundarios -->
+    <color name="colorSecondary">#FF4500</color>
+    <color name="colorSecondaryVariant">#CF6679</color>
+    <color name="colorOnSecondary">#F5F5F5</color>
+
+    <!-- Fondo y textos -->
+    <color name="colorBackground">#121212</color>
+    <color name="colorHint">#F5F5F5</color>
+</resources>

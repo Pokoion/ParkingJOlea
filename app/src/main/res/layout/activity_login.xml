@@ -4,22 +4,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
     tools:context=".view.activity.LoginActivity">
 
 
     <Button
         android:id="@+id/loginButton"
-        style="?attr/materialButtonOutlinedStyle"
         android:layout_width="243dp"
         android:layout_height="77dp"
-        android:layout_marginTop="128dp"
+        android:layout_marginTop="108dp"
         android:text="Login"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.494"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/password"
-        app:strokeColor="@color/bluePrototype" />
+        app:layout_constraintTop_toBottomOf="@+id/password" />
 
     <LinearLayout
         android:layout_width="wrap_content"
@@ -36,15 +34,15 @@
 
     <TextView
         android:id="@+id/title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="96dp"
-        android:text="Welcome"
-        android:textColor="@color/blackPrototype"
-        android:textSize="35sp"
-        android:textStyle="bold"
+        android:layout_width="320dp"
+        android:layout_height="88dp"
+        android:layout_marginTop="92dp"
+        android:text="Zuatzu Parking Reservator"
+        android:textAlignment="center"
+        android:textSize="38sp"
+        android:textStyle="normal"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.476"
+        app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -52,13 +50,12 @@
         android:id="@+id/subtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="140dp"
+        android:layout_marginTop="192dp"
         android:text="sign in to access your account"
-        android:textColor="@color/blackPrototype"
         android:textSize="14sp"
         android:textStyle="normal"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.475"
+        app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -67,11 +64,10 @@
         style="@style/Theme.ParkingLKS.TextInputLayout"
         android:layout_width="279dp"
         android:layout_height="80dp"
-        android:layout_marginTop="144dp"
-        android:hint="Enter your email"
+        android:layout_marginTop="92dp"
+        android:hint="Email"
         android:inputType="text"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.492"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/title">
 
@@ -88,7 +84,7 @@
         android:layout_width="280dp"
         android:layout_height="69dp"
         android:layout_marginTop="28dp"
-        android:hint="Enter your password"
+        android:hint="Password"
         android:inputType="textEmailAddress"
         app:endIconMode="password_toggle"
         app:errorEnabled="true"
@@ -105,34 +101,29 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
-    <TextView
-        android:id="@+id/createAccount"
+    <Button
+        android:id="@+id/createAccountButton"
+        style="?attr/materialButtonOutlinedStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="New Member? Register Now"
-        android:textColor="@color/whitePrototype"
+        android:text="Not a member? Sign up"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/loginButton"
         app:layout_constraintVertical_bias="0.0" />
 
-    <TextView
-        android:id="@+id/forgetPass"
+    <Button
+        android:id="@+id/forgotPassButton"
+        style="?attr/materialButtonOutlinedStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Forget Password?"
-        android:textColor="@color/bluePrototype"
-        android:textSize="12sp"
-        app:layout_constraintBottom_toTopOf="@+id/loginButton"
+        android:layout_marginTop="48dp"
+        android:text="Forgot Password?"
+        android:textSize="8sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.757"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/password"
-        app:layout_constraintVertical_bias="0.0" />
-
+        app:layout_constraintTop_toBottomOf="@+id/createAccountButton" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
