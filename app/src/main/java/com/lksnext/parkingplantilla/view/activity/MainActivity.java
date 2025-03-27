@@ -39,13 +39,15 @@ public class MainActivity extends AppCompatActivity {
         //Dependendiendo que boton clique el usuario de la navegacion se hacen distintas cosas
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
-            if (itemId == R.id.newres) {
+            if (itemId == R.id.home) {
                 navController.navigate(R.id.mainFragment);
                 return true;
             } else if (itemId == R.id.reservations) {
-                //TODO
-            } else if (itemId == R.id.person) {
-                //TODO
+                navController.navigate(R.id.reservationsFragment);
+                return true;
+            } else if (itemId == R.id.user) {
+                navController.navigate(R.id.userFragment);
+                return true;
             }
             return false;
         });

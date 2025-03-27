@@ -11,6 +11,6 @@
     <color name="colorOnSecondary">#000000</color>
 
     <!-- Fondo y textos -->
-    <color name="colorBackground">#FFFFFF</color>
+    <color name="colorBackground">#EBEBEB</color>
     <color name="colorHint">#141414</color>
 </resources>
