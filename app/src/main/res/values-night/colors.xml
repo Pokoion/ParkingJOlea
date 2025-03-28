@@ -6,7 +6,7 @@
     <color name="colorOnPrimary">#000000</color>
 
     <!-- Colores secundarios -->
-    <color name="colorSecondary">#FF4500</color>
+    <color name="colorSecondary">#FF5B5B</color>
     <color name="colorSecondaryVariant">#CF6679</color>
     <color name="colorOnSecondary">#F5F5F5</color>
 

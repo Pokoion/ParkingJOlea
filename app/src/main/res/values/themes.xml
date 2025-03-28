@@ -14,9 +14,6 @@
         <item name="colorSecondaryVariant">@color/colorSecondaryVariant</item>
         <item name="colorOnSecondary">@color/colorOnSecondary</item>
 
-        <!-- Status bar -->
-        <item name="android:statusBarColor">@color/colorPrimaryVariant</item>
-
         <!-- Fondo y textos -->
         <item name="android:textColorHint">@color/colorHint</item>
     </style>
@@ -25,4 +22,10 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="hintTextColor">@color/colorHint</item>
     </style>
+
+    <style name="Theme.ParkingLKS.ButtonSecondary">
+        <item name="android:backgroundTint">@color/colorSecondary</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
 </resources>
