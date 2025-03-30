@@ -6,9 +6,9 @@
     <color name="colorOnPrimary">#000000</color>
 
     <!-- Colores secundarios -->
-    <color name="colorSecondary">#FF5B5B</color>
-    <color name="colorSecondaryVariant">#CF6679</color>
-    <color name="colorOnSecondary">#F5F5F5</color>
+    <color name="colorSecondary">#03DAC5</color>>
+    <color name="colorSecondaryVariant">#018786</color>
+    <color name="colorOnSecondary">#000000</color>
 
     <!-- Fondo y textos -->
     <color name="colorBackground">#121212</color>
