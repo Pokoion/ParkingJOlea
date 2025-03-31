@@ -13,6 +13,9 @@
             android:name=".view.activity.RegisterActivity"
             android:exported="false" />
         <activity
+            android:name=".view.activity.ChangePassActivity"
+            android:exported="false" />
+        <activity
             android:name=".view.activity.LoginActivity"
             android:exported="true">
             <intent-filter>

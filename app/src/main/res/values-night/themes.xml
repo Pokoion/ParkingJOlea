@@ -17,7 +17,7 @@
         <item name="android:textColorHint">@color/colorHint</item>
     </style>
 
-    <style name="Theme.ParkingLKS.TextInputLayout" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.ParkingLKS.TextInputLayout">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="hintTextColor">@color/colorHint</item>
     </style>

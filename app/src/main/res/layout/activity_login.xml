@@ -11,7 +11,7 @@
         android:id="@+id/loginButton"
         android:layout_width="243dp"
         android:layout_height="77dp"
-        android:layout_marginTop="108dp"
+        android:layout_marginTop="96dp"
         android:text="Login"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -50,26 +50,26 @@
         android:id="@+id/subtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="192dp"
+        android:layout_marginTop="8dp"
         android:text="sign in to access your account"
         android:textSize="14sp"
         android:textStyle="normal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.497"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/title" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/email"
         style="@style/Theme.ParkingLKS.TextInputLayout"
         android:layout_width="279dp"
         android:layout_height="80dp"
-        android:layout_marginTop="92dp"
+        android:layout_marginTop="64dp"
         android:hint="Email"
         android:inputType="text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/title">
+        app:layout_constraintTop_toBottomOf="@+id/subtitle">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/emailText"
@@ -83,7 +83,7 @@
         style="@style/Theme.ParkingLKS.TextInputLayout"
         android:layout_width="280dp"
         android:layout_height="69dp"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="32dp"
         android:hint="Password"
         android:inputType="textEmailAddress"
         app:endIconMode="password_toggle"
@@ -107,23 +107,30 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Not a member? Sign up"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/loginButton"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toBottomOf="@+id/loginButton" />
 
     <Button
         android:id="@+id/forgotPassButton"
         style="?attr/materialButtonOutlinedStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
+        android:layout_width="117dp"
+        android:layout_height="54dp"
+        android:layout_marginTop="8dp"
         android:text="Forgot Password?"
         android:textSize="8sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/createAccountButton" />
+        app:layout_constraintEnd_toEndOf="@+id/password"
+        app:layout_constraintTop_toBottomOf="@+id/password" />
+
+    <CheckBox
+        android:id="@+id/checkBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Remember me"
+        android:textSize="8dp"
+        app:layout_constraintStart_toStartOf="@+id/password"
+        app:layout_constraintTop_toBottomOf="@+id/password" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
