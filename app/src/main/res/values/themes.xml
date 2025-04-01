@@ -24,7 +24,7 @@
     </style>
 
     <style name="Theme.ParkingLKS.ButtonSecondary">
-        <item name="android:backgroundTint">@color/colorSecondary</item>
+        <item name="android:backgroundTint">@color/red</item>
         <item name="android:textColor">@android:color/white</item>
     </style>
 

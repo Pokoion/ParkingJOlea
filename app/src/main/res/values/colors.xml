@@ -13,4 +13,5 @@
     <!-- Fondo y textos -->
     <color name="colorBackground">#EBEBEB</color>
     <color name="colorHint">#141414</color>
+    <color name="red">#FF5B5B</color>
 </resources>
