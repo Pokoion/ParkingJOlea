@@ -165,7 +165,6 @@
                 android:id="@+id/radioGroup"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:orientation="horizontal"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -176,17 +175,22 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
-                    android:text="Light Mode" />
+                    android:text="Light" />
 
                 <RadioButton
                     android:id="@+id/radioButtonDark"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Dark Mode"
-                    tools:layout_editor_absoluteX="63dp"
-                    tools:layout_editor_absoluteY="384dp" />
+                    android:layout_marginEnd="16dp"
+                    android:text="Dark" />
 
+                <RadioButton
+                    android:id="@+id/radioButtonSystem"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="System" />
             </RadioGroup>
+
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>

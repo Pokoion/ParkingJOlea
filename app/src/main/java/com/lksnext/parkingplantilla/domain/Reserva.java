@@ -36,35 +36,27 @@ public class Reserva {
         this.usuario = usuario;
     }
 
-    public Plaza getPlazaId() {
-        return plaza;
-    }
-
-    public void setPlazaId(Plaza plaza) {
-        this.plaza = plaza;
-    }
-
-    public Hora getHoraInicio() {
-        return hora;
-    }
-
-    public void setHoraInicio(Hora hora) {
-        this.hora = hora;
-    }
-
-    public Hora getHoraFin() {
-        return hora;
-    }
-
-    public void setHoraFin(Hora hora) {
-        this.hora = hora;
-    }
-
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public Plaza getPlaza() {
+        return plaza;
+    }
+
+    public void setPlaza(Plaza plaza) {
+        this.plaza = plaza;
+    }
+
+    public Hora getHora() {
+        return hora;
+    }
+
+    public void setHora(Hora hora) {
+        this.hora = hora;
     }
 }
