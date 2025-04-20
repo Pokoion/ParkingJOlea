@@ -4,35 +4,86 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.lksnext.parkingplantilla.ParkingApplication;
 import com.lksnext.parkingplantilla.data.DataRepository;
+import com.lksnext.parkingplantilla.data.UserPreferencesManager;
 import com.lksnext.parkingplantilla.domain.Callback;
+import com.lksnext.parkingplantilla.domain.User;
 
 public class LoginViewModel extends ViewModel {
 
-    // Aquí puedes declarar los LiveData y métodos necesarios para la vista de inicio de sesión
-    MutableLiveData<Boolean> logged = new MutableLiveData<>(null);
+    public enum LoginError {
+        NONE,
+        EMPTY_FIELDS,
+        INVALID_CREDENTIALS,
+        NETWORK_ERROR,
+        APPLICATION_ERROR
+    }
 
-    public LiveData<Boolean> isLogged(){
+    private final DataRepository repository;
+    private final MutableLiveData<Boolean> logged = new MutableLiveData<>(null);
+    private final MutableLiveData<String> currentUserEmail = new MutableLiveData<>(null);
+    private final MutableLiveData<LoginError> loginError = new MutableLiveData<>(LoginError.NONE);
+
+    public LoginViewModel() {
+        this.repository = ParkingApplication.getRepository();
+        // Check if user is already logged in
+        if (repository.isUserLoggedIn()) {
+            User currentUser = repository.getCurrentUser();
+            if (currentUser != null) {
+                logged.setValue(true);
+                currentUserEmail.setValue(currentUser.getEmail());
+            }
+        }
+    }
+
+    public LiveData<Boolean> isLogged() {
         return logged;
     }
 
+    public LiveData<String> getCurrentUserEmail() {
+        return currentUserEmail;
+    }
+
+    public LiveData<LoginError> getLoginError() {
+        return loginError;
+    }
+
     public void loginUser(String email, String password) {
-        //Clase para comprobar si los datos de inicio de sesión son correctos o no
-        DataRepository.getInstance().login(email, password, new Callback() {
-            //En caso de que el login sea correcto, que se hace
+        // Clear previous error
+        loginError.setValue(LoginError.NONE);
+
+        // Basic validation
+        if (email.isEmpty() || password.isEmpty()) {
+            loginError.setValue(LoginError.EMPTY_FIELDS);
+            return;
+        }
+
+        if (repository == null) {
+            loginError.setValue(LoginError.APPLICATION_ERROR);
+            return;
+        }
+
+        repository.login(email, password, new Callback() {
             @Override
             public void onSuccess() {
-                //TODO
-                logged.setValue(Boolean.TRUE);
+                logged.setValue(true);
+                currentUserEmail.setValue(email);
             }
 
-            //En caso de que el login sea incorrecto, que se hace
             @Override
             public void onFailure() {
-                //TODO
-                logged.setValue(Boolean.FALSE);
+                logged.setValue(false);
+                currentUserEmail.setValue(null);
+                loginError.setValue(LoginError.INVALID_CREDENTIALS);
             }
         });
     }
-}
 
+    public void logout() {
+        repository.logout();
+        logged.setValue(false);
+        currentUserEmail.setValue(null);
+        loginError.setValue(LoginError.NONE);
+    }
+}

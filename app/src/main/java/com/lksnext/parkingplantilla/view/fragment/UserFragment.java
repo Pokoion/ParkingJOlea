@@ -1,68 +1,70 @@
 package com.lksnext.parkingplantilla.view.fragment;
 
-import android.content.res.Configuration;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatDelegate;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.lksnext.parkingplantilla.databinding.FragmentUserBinding;
+import com.lksnext.parkingplantilla.view.activity.LoginActivity;
+import com.lksnext.parkingplantilla.viewmodel.LoginViewModel;
+import com.lksnext.parkingplantilla.viewmodel.UserViewModel;
 
 public class UserFragment extends Fragment {
 
     private FragmentUserBinding binding;
-
-    public UserFragment() {
-
-    }
+    private UserViewModel userViewModel;
+    private LoginViewModel loginViewModel;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-
         binding = FragmentUserBinding.inflate(inflater, container, false);
-
-        setupInitialTheme();
-
-        setupThemeListeners();
-
         return binding.getRoot();
     }
 
-    private void setupInitialTheme() {
-        int nightMode = AppCompatDelegate.getDefaultNightMode();
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
-        switch (nightMode) {
-            case AppCompatDelegate.MODE_NIGHT_NO:
-                binding.radioButtonLight.setChecked(true);
-                break;
-            case AppCompatDelegate.MODE_NIGHT_YES:
-                binding.radioButtonDark.setChecked(true);
-                break;
-            case AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM:
-            default:
-                binding.radioButtonSystem.setChecked(true);
-                break;
-        }
+        // Initialize ViewModels
+        userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
+        loginViewModel = new ViewModelProvider(requireActivity()).get(LoginViewModel.class);
+
+        // Connect the ViewModels
+        userViewModel.setLoginViewModel(loginViewModel);
+
+        // Set up UI components
+        setupUI();
+
+        // Observe logout state
+        observeLogout();
     }
 
-    private void setupThemeListeners() {
-        binding.radioButtonLight.setOnClickListener(v -> {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
-            requireActivity().recreate();
-        });
+    private void setupUI() {
+        // Set logout button click listener
+        binding.logoutButton.setOnClickListener(v -> userViewModel.logout());
 
-        binding.radioButtonDark.setOnClickListener(v -> {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-            requireActivity().recreate();
-        });
+        // Setup other UI elements as needed
+    }
 
-        binding.radioButtonSystem.setOnClickListener(v -> {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
-            requireActivity().recreate();
+    private void observeLogout() {
+        userViewModel.isLogoutSuccessful().observe(getViewLifecycleOwner(), isLoggedOut -> {
+            if (isLoggedOut != null && isLoggedOut) {
+                // Navigate to login screen
+                Intent intent = new Intent(requireActivity(), LoginActivity.class);
+                // Clear activity stack so user can't go back
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+
+                // Reset logout state
+                userViewModel.resetLogoutState();
+            }
         });
     }
 
