@@ -1,7 +1,6 @@
 package com.lksnext.parkingplantilla.data.local;
 
 import android.content.Context;
-import android.os.Handler;
 
 import com.lksnext.parkingplantilla.data.repository.DataSource;
 import com.lksnext.parkingplantilla.domain.Callback;
@@ -10,7 +9,6 @@ import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.domain.Reserva;
 import com.lksnext.parkingplantilla.domain.User;
-import com.lksnext.parkingplantilla.data.UserPreferencesManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,15 +17,13 @@ import java.util.Map;
 import java.util.UUID;
 
 public class LocalDataSource implements DataSource {
-    private final UserPreferencesManager preferencesManager;
     private final Map<String, User> fakeDatabase;
     private final List<Plaza> plazas;
     private final List<Hora> horas;
     private final Map<String, List<Reserva>> reservasPorUsuario;
     private final List<Reserva> todasReservas;
 
-    public LocalDataSource(Context context) {
-        this.preferencesManager = new UserPreferencesManager(context);
+    public LocalDataSource() {
 
         // Initialize fake users
         this.fakeDatabase = new HashMap<>();
@@ -136,40 +132,14 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
-    public void login(String email, String password, Callback callback) {
+    public void login(String email, String password, DataCallback<User> callback) {
         User storedUser = fakeDatabase.get(email);
 
         if (storedUser != null && storedUser.getPassword().equals(password)) {
-            preferencesManager.saveUser(storedUser);
-            preferencesManager.setLoggedIn(true);
-            callback.onSuccess();
+            callback.onSuccess(storedUser); // Return the user object
         } else {
-            callback.onFailure();
+            callback.onError(new Exception("Invalid credentials"));
         }
-    }
-
-    @Override
-    public void logout() {
-        preferencesManager.clearUserData();
-    }
-
-    @Override
-    public User getCurrentUser() {
-        return preferencesManager.getUser();
-    }
-
-    @Override
-    public void saveUser(User user) {
-        preferencesManager.saveUser(user);
-    }
-
-    @Override
-    public boolean isUserLoggedIn() {
-        return preferencesManager.isUserLoggedIn();
-    }
-
-    private void setLoggedIn(boolean isLoggedIn) {
-        preferencesManager.setLoggedIn(isLoggedIn);
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.lksnext.parkingplantilla.data;
 
+import android.content.Context;
+
 import com.lksnext.parkingplantilla.data.repository.DataSource;
 import com.lksnext.parkingplantilla.domain.Callback;
 import com.lksnext.parkingplantilla.domain.DataCallback;
@@ -9,48 +11,57 @@ import com.lksnext.parkingplantilla.domain.User;
 import java.util.List;
 
 public class DataRepository {
-
     private static DataRepository instance;
     private final DataSource dataSource;
+    private final UserPreferencesManager preferencesManager;
 
-    /**
-     * Private constructor to enforce singleton pattern.
-     * @param dataSource The data source to be used.
-     */
-    private DataRepository(DataSource dataSource) {
+    private DataRepository(DataSource dataSource, Context context) {
         this.dataSource = dataSource;
+        this.preferencesManager = new UserPreferencesManager(context);
     }
 
-    /**
-     * Singleton pattern to get the instance of DataRepository.
-     * @param dataSource The data source to be used.
-     * @return The instance of DataRepository.
-     */
-    public static DataRepository getInstance(DataSource dataSource) {
+    public static DataRepository getInstance(DataSource dataSource, Context context) {
         if (instance == null) {
-            instance = new DataRepository(dataSource);
+            instance = new DataRepository(dataSource, context);
         }
         return instance;
     }
 
-    public void login(String email, String password, Callback callback) {
-        dataSource.login(email, password, callback);
-    }
-
     public void logout() {
-        dataSource.logout();
+        preferencesManager.clearUserData();
     }
 
     public User getCurrentUser() {
-        return dataSource.getCurrentUser();
+        return preferencesManager.getUser();
     }
 
     public void saveUser(User user) {
-        dataSource.saveUser(user);
+        preferencesManager.saveUser(user);
     }
 
     public boolean isUserLoggedIn() {
-        return dataSource.isUserLoggedIn();
+        return preferencesManager.isUserLoggedIn();
+    }
+
+    private void setLoggedIn(boolean isLoggedIn) {
+        preferencesManager.setLoggedIn(isLoggedIn);
+    }
+
+    public void login(String email, String password, Callback callback) {
+        dataSource.login(email, password, new DataCallback<User>() {
+            @Override
+            public void onSuccess(User user) {
+                // Save the authenticated user
+                preferencesManager.saveUser(user);
+                preferencesManager.setLoggedIn(true);
+                callback.onSuccess();
+            }
+
+            @Override
+            public void onError(Exception e) {
+                callback.onFailure();
+            }
+        });
     }
 
     public void getReservations(String userId, DataCallback<List<Reserva>> callback) {
@@ -68,5 +79,4 @@ public class DataRepository {
     public void cancelReservation(String reservationId, Callback callback) {
         dataSource.cancelReservation(reservationId, callback);
     }
-
 }
