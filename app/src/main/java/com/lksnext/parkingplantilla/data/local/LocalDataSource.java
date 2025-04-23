@@ -1,7 +1,5 @@
 package com.lksnext.parkingplantilla.data.local;
 
-import android.content.Context;
-
 import com.lksnext.parkingplantilla.data.repository.DataSource;
 import com.lksnext.parkingplantilla.domain.Callback;
 import com.lksnext.parkingplantilla.domain.DataCallback;
@@ -138,7 +136,18 @@ public class LocalDataSource implements DataSource {
         if (storedUser != null && storedUser.getPassword().equals(password)) {
             callback.onSuccess(storedUser); // Return the user object
         } else {
-            callback.onError(new Exception("Invalid credentials"));
+            callback.onFailure(new Exception("Invalid credentials"));
+        }
+    }
+
+    @Override
+    public void register(String name, String email, String password, DataCallback<User> callback) {
+        if (fakeDatabase.containsKey(email)) {
+            callback.onFailure(new Exception("User already exists"));
+        } else {
+            User newUser = new User(name, email, password);
+            fakeDatabase.put(email, newUser);
+            callback.onSuccess(newUser);
         }
     }
 

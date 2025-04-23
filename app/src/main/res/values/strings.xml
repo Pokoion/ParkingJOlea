@@ -9,10 +9,22 @@
     <string name="fragment_end">End</string>
     <string name="buscar">Buscar plazas libres</string>
 
-    <!-- Login error messages -->
+    <!-- Login messages -->
     <string name="email_required">Email is required</string>
     <string name="password_required">Password is required</string>
     <string name="invalid_credentials">Incorrect email or password</string>
+    <string name="registration_successful">You have registered correctly</string>
+
+    <!-- Registration messages -->
+    <string name="invalid_email_format">Invalid email format</string>
+    <string name="username_required">Username required</string>
+    <string name="password_too_short">Password too short</string>
+    <string name="email_already_exists">Email already exists</string>
+    <string name="registration_failed">Registration failed</string>
+
+    <!-- Global messages -->
     <string name="network_error">Network error. Please check your connection</string>
+    <string name="application_error">Application error.</string>
     <string name="app_initialization_error">Application error. Please restart the app</string>
+
 </resources>

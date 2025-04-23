@@ -35,16 +35,8 @@ public class DataRepository {
         return preferencesManager.getUser();
     }
 
-    public void saveUser(User user) {
-        preferencesManager.saveUser(user);
-    }
-
     public boolean isUserLoggedIn() {
         return preferencesManager.isUserLoggedIn();
-    }
-
-    private void setLoggedIn(boolean isLoggedIn) {
-        preferencesManager.setLoggedIn(isLoggedIn);
     }
 
     public void login(String email, String password, Callback callback) {
@@ -58,7 +50,24 @@ public class DataRepository {
             }
 
             @Override
-            public void onError(Exception e) {
+            public void onFailure(Exception e) {
+                callback.onFailure();
+            }
+        });
+    }
+
+    public void register(String name, String email, String password, Callback callback) {
+        dataSource.register(name, email, password, new DataCallback<User>() {
+            @Override
+            public void onSuccess(User user) {
+                // Save the registered user
+                preferencesManager.saveUser(user);
+                preferencesManager.setLoggedIn(true);
+                callback.onSuccess();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
                 callback.onFailure();
             }
         });

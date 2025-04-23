@@ -15,4 +15,5 @@ public interface DataSource {
     void cancelReservation(String reservationId, Callback callback);
 
     void login(String email, String password, DataCallback<User> callback);
+    void register(String name, String email, String password, DataCallback<User> callback);
 }

@@ -10,19 +10,16 @@ import com.lksnext.parkingplantilla.data.repository.DataSource;
 public class ParkingApplication extends Application {
 
     private static DataRepository repository;
-    private Context context;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        this.context = getApplicationContext();
-
         // Initialize the data source
         DataSource dataSource = new LocalDataSource();
 
         // Initialize repository with the data source
-        repository = DataRepository.getInstance(dataSource, context);
+        repository = DataRepository.getInstance(dataSource, getApplicationContext());
     }
 
     public static DataRepository getRepository() {

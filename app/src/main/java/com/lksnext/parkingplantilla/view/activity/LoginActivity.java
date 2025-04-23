@@ -11,7 +11,6 @@ import com.lksnext.parkingplantilla.databinding.ActivityLoginBinding;
 import com.lksnext.parkingplantilla.viewmodel.LoginViewModel;
 import com.lksnext.parkingplantilla.R;
 
-// In LoginActivity.java
 public class LoginActivity extends AppCompatActivity {
 
     private ActivityLoginBinding binding;
@@ -26,38 +25,14 @@ public class LoginActivity extends AppCompatActivity {
 
         loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
 
-        binding.loginButton.setOnClickListener(v -> {
-            clearErrors();
+        // Set up observers
+        setupObservers();
 
-            String email = binding.emailText.getText().toString();
-            String password = binding.passwordText.getText().toString();
+        // Set up click listeners
+        setupClickListeners();
+    }
 
-            // Client-side validation
-            boolean isValid = true;
-            if (email.isEmpty()) {
-                binding.email.setError(getString(R.string.email_required));
-                isValid = false;
-            }
-            if (password.isEmpty()) {
-                binding.password.setError(getString(R.string.password_required));
-                isValid = false;
-            }
-
-            if (isValid) {
-                loginViewModel.loginUser(email, password);
-            }
-        });
-
-        binding.createAccountButton.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
-            startActivity(intent);
-        });
-
-        binding.forgotPassButton.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, ChangePassActivity.class);
-            startActivity(intent);
-        });
-
+    private void setupObservers() {
         loginViewModel.isLogged().observe(this, logged -> {
             if (logged != null && logged) {
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
@@ -71,6 +46,47 @@ public class LoginActivity extends AppCompatActivity {
                 handleLoginError(error);
             }
         });
+    }
+
+    private void setupClickListeners() {
+        binding.loginButton.setOnClickListener(v -> attemptLogin());
+
+        binding.createAccountButton.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
+            startActivity(intent);
+        });
+
+        binding.forgotPassButton.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, ChangePassActivity.class);
+            startActivity(intent);
+        });
+    }
+
+    private void attemptLogin() {
+        clearErrors();
+
+        String email = binding.emailText.getText().toString();
+        String password = binding.passwordText.getText().toString();
+
+        // Client-side validation
+        boolean isValid = validateLoginInputs(email, password);
+
+        if (isValid) {
+            loginViewModel.loginUser(email, password);
+        }
+    }
+
+    private boolean validateLoginInputs(String email, String password) {
+        boolean isValid = true;
+        if (email.isEmpty()) {
+            binding.email.setError(getString(R.string.email_required));
+            isValid = false;
+        }
+        if (password.isEmpty()) {
+            binding.password.setError(getString(R.string.password_required));
+            isValid = false;
+        }
+        return isValid;
     }
 
     private void handleLoginError(LoginViewModel.LoginError error) {

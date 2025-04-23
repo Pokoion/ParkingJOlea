@@ -55,7 +55,7 @@ public class ReservationsViewModel extends ViewModel {
             }
 
             @Override
-            public void onError(Exception e) {
+            public void onFailure(Exception e) {
                 error.setValue(e.getMessage());
                 isLoading.setValue(false);
             }

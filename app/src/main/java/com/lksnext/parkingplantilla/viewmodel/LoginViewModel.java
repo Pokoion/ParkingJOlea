@@ -6,9 +6,9 @@ import androidx.lifecycle.ViewModel;
 
 import com.lksnext.parkingplantilla.ParkingApplication;
 import com.lksnext.parkingplantilla.data.DataRepository;
-import com.lksnext.parkingplantilla.data.UserPreferencesManager;
 import com.lksnext.parkingplantilla.domain.Callback;
 import com.lksnext.parkingplantilla.domain.User;
+import com.lksnext.parkingplantilla.utils.Validators;
 
 public class LoginViewModel extends ViewModel {
 
@@ -50,19 +50,9 @@ public class LoginViewModel extends ViewModel {
     }
 
     public void loginUser(String email, String password) {
-        // Clear previous error
         loginError.setValue(LoginError.NONE);
 
-        // Basic validation
-        if (email.isEmpty() || password.isEmpty()) {
-            loginError.setValue(LoginError.EMPTY_FIELDS);
-            return;
-        }
-
-        if (repository == null) {
-            loginError.setValue(LoginError.APPLICATION_ERROR);
-            return;
-        }
+        if (!validateLoginFields(email, password)) return;
 
         repository.login(email, password, new Callback() {
             @Override
@@ -78,6 +68,19 @@ public class LoginViewModel extends ViewModel {
                 loginError.setValue(LoginError.INVALID_CREDENTIALS);
             }
         });
+    }
+
+    public boolean validateLoginFields(String email, String password) {
+        if (!Validators.areLoginFieldsValid(email, password)) {
+            loginError.setValue(LoginError.EMPTY_FIELDS);
+            return false;
+        }
+
+        if (repository == null) {
+            loginError.setValue(LoginError.APPLICATION_ERROR);
+            return false;
+        }
+        return true;
     }
 
     public void logout() {

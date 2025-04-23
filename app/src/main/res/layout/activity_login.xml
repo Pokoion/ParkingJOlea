@@ -74,7 +74,11 @@
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/emailText"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
+            />
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -85,7 +89,6 @@
         android:layout_height="80dp"
         android:layout_marginTop="32dp"
         android:hint="Password"
-        android:inputType="textEmailAddress"
         app:endIconMode="password_toggle"
         app:errorEnabled="true"
         app:layout_constraintEnd_toEndOf="parent"
