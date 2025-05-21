@@ -50,7 +50,52 @@ public class UserFragment extends Fragment {
         // Set logout button click listener
         binding.logoutButton.setOnClickListener(v -> userViewModel.logout());
 
-        // Setup other UI elements as needed
+        if (userViewModel.getCurrentUser() != null) {
+            binding.textView4.setText(userViewModel.getCurrentUser().getName());
+            binding.textView5.setText(userViewModel.getCurrentUser().getEmail());
+        }
+
+        // Configurar el RadioGroup para el tema
+        setupThemeSelection();
+    }
+
+    private void setupThemeSelection() {
+        // Establecer el tema actual según las preferencias guardadas
+        int currentTheme = userViewModel.getThemeMode();
+        switch (currentTheme) {
+            case UserViewModel.THEME_LIGHT:
+                binding.radioButtonLight.setChecked(true);
+                break;
+            case UserViewModel.THEME_DARK:
+                binding.radioButtonDark.setChecked(true);
+                break;
+            case UserViewModel.THEME_SYSTEM:
+            default:
+                binding.radioButtonSystem.setChecked(true);
+                break;
+        }
+
+        // Configurar listeners para los RadioButtons
+        binding.radioButtonLight.setOnClickListener(v -> {
+            if (userViewModel.getThemeMode() != UserViewModel.THEME_LIGHT) {
+                userViewModel.setThemeMode(UserViewModel.THEME_LIGHT);
+                requireActivity().recreate();
+            }
+        });
+
+        binding.radioButtonDark.setOnClickListener(v -> {
+            if (userViewModel.getThemeMode() != UserViewModel.THEME_DARK) {
+                userViewModel.setThemeMode(UserViewModel.THEME_DARK);
+                requireActivity().recreate();
+            }
+        });
+
+        binding.radioButtonSystem.setOnClickListener(v -> {
+            if (userViewModel.getThemeMode() != UserViewModel.THEME_SYSTEM) {
+                userViewModel.setThemeMode(UserViewModel.THEME_SYSTEM);
+                requireActivity().recreate();
+            }
+        });
     }
 
     private void observeLogout() {

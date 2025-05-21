@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.ParkingLKS" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.ParkingLKS" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="android:windowBackground">@color/colorBackground</item>
         <item name="android:fontFamily">@font/montserratregular</item>
 
@@ -16,16 +16,10 @@
 
         <!-- Fondo y textos -->
         <item name="android:textColorHint">@color/colorHint</item>
+
+        <!-- Estado de la barra de sistema -->
+        <item name="android:statusBarColor">@color/colorPrimaryVariant</item>
     </style>
 
-    <style name="Theme.ParkingLKS.TextInputLayout">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="hintTextColor">@color/colorHint</item>
-    </style>
-
-    <style name="Theme.ParkingLKS.ButtonSecondary">
-        <item name="android:backgroundTint">@color/red</item>
-        <item name="android:textColor">@android:color/white</item>
-    </style>
-
+    <!-- Estilos adicionales sin cambios -->
 </resources>

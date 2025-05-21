@@ -61,7 +61,6 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/email"
-        style="@style/Theme.ParkingLKS.TextInputLayout"
         android:layout_width="280dp"
         android:layout_height="80dp"
         android:layout_marginTop="64dp"
@@ -84,7 +83,6 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/password"
-        style="@style/Theme.ParkingLKS.TextInputLayout"
         android:layout_width="280dp"
         android:layout_height="80dp"
         android:layout_marginTop="32dp"

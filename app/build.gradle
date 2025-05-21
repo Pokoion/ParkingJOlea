@@ -59,6 +59,7 @@ apply plugin: "org.sonarqube"
 sonarqube {
     properties {
         property "sonar.projectKey", "Pokoion_ParkingJOlea"
+        property "sonar.projectName", "Parking JOlea"
         property "sonar.organization", "pokoion"
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.sources", "src/main/java"

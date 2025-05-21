@@ -8,10 +8,11 @@
     <!-- Colores secundarios -->
     <color name="colorSecondary">#03DAC5</color>
     <color name="colorSecondaryVariant">#018786</color>
-    <color name="colorOnSecondary">#FFFFFF</color>
+    <color name="colorOnSecondary">#000000</color>
 
     <!-- Fondo y textos -->
-    <color name="colorBackground">#EBEBEB</color>
-    <color name="colorHint">#141414</color>
-    <color name="red">#FF5B5B</color>
+    <color name="colorBackground">#FFFFFF</color>
+    <color name="colorContainerBackground">#E0E0E0</color>
+    <color name="colorHint">#757575</color>
+    <color name="red">#F44336</color>
 </resources>
