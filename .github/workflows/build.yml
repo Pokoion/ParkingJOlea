@@ -32,9 +32,8 @@ jobs:
           restore-keys: ${{ runner.os }}-gradle
       - name: Give execute permission to Gradle wrapper
         run: chmod +x ./gradlew
-      - name: Build and analyze app module
+      - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew :app:build :app:sonar --info
-
+        run: ./gradlew build sonar --info
 

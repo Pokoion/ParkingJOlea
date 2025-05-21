@@ -18,3 +18,22 @@ allprojects {
         maven { url "https://plugins.gradle.org/m2/" }
     }
 }
+
+apply plugin: "org.sonarqube"
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", "Pokoion_ParkingJOlea"
+        property "sonar.organization", "pokoion"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.sources", "app/src/main/java"
+        property "sonar.tests", "app/src/test/java"
+        property "sonar.gradle.skipCompile", "false"
+        property "sonar.verbose", "true"
+        property "sonar.java.source", "17"
+        property "sonar.java.binaries", "app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes"
+        property "sonar.java.libraries", "**/*.jar"
+        property "sonar.sourceEncoding", "UTF-8"
+        property "sonar.exclusions", "**/BuildConfig.java,**/R.java"
+    }
+}
