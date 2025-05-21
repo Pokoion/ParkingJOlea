@@ -54,3 +54,16 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.5.0'
 
 }
+
+apply plugin: "org.sonarqube"
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", "Pokoion_ParkingJOlea"
+        property "sonar.organization", "pokoion"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.sources", "src/main/java"
+        property "sonar.tests", "src/test/java"
+        property "sonar.gradle.skipCompile", "false"
+    }
+}
