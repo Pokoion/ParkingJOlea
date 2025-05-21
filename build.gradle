@@ -30,6 +30,7 @@ sonarqube {
         property "sonar.projectKey", "Pokoion_ParkingJOlea"
         property "sonar.organization", "pokoion"
         property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.gradle.skipCompile", "true"
+        property "sonar.sources", "app/src/main/java"
+        property "sonar.gradle.skipCompile", "false"
     }
 }
