@@ -57,6 +57,24 @@ public class UserFragment extends Fragment {
 
         // Configurar el RadioGroup para el tema
         setupThemeSelection();
+
+        // Configurar los switches de notificaciones
+        setupNotificationSwitches();
+    }
+
+    private void setupNotificationSwitches() {
+        // Establecer el estado inicial de los switches según las preferencias guardadas
+        binding.switchCompat.setChecked(userViewModel.isStartReminderEnabled());
+        binding.switchCompat3.setChecked(userViewModel.isEndReminderEnabled());
+
+        // Configurar listeners para los switches
+        binding.switchCompat.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            userViewModel.setStartReminderEnabled(isChecked);
+        });
+
+        binding.switchCompat3.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            userViewModel.setEndReminderEnabled(isChecked);
+        });
     }
 
     private void setupThemeSelection() {

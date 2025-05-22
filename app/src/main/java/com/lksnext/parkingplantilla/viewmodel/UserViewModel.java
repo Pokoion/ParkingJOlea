@@ -25,6 +25,8 @@ public class UserViewModel extends ViewModel {
 
     public static final String PREF_NAME = "theme_preferences";
     public static final String PREF_THEME = "selected_theme";
+    public static final String PREF_START_REMINDER = "start_reminder_enabled";
+    public static final String PREF_END_REMINDER = "end_reminder_enabled";
 
     public UserViewModel() {
         this.repository = ParkingApplication.getRepository();
@@ -100,5 +102,33 @@ public class UserViewModel extends ViewModel {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
                 break;
         }
+    }
+
+    public void setStartReminderEnabled(boolean enabled) {
+        SharedPreferences prefs = ParkingApplication.getAppContext()
+                .getSharedPreferences(PREF_NAME, 0);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(PREF_START_REMINDER, enabled);
+        editor.apply();
+    }
+
+    public boolean isStartReminderEnabled() {
+        SharedPreferences prefs = ParkingApplication.getAppContext()
+                .getSharedPreferences(PREF_NAME, 0);
+        return prefs.getBoolean(PREF_START_REMINDER, false); // Por defecto, desactivado
+    }
+
+    public void setEndReminderEnabled(boolean enabled) {
+        SharedPreferences prefs = ParkingApplication.getAppContext()
+                .getSharedPreferences(PREF_NAME, 0);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(PREF_END_REMINDER, enabled);
+        editor.apply();
+    }
+
+    public boolean isEndReminderEnabled() {
+        SharedPreferences prefs = ParkingApplication.getAppContext()
+                .getSharedPreferences(PREF_NAME, 0);
+        return prefs.getBoolean(PREF_END_REMINDER, false); // Por defecto, desactivado
     }
 }

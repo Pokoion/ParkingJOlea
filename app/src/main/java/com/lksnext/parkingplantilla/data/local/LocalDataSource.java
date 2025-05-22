@@ -163,6 +163,26 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
+    public void getHistoricReservations(String userId, DataCallback<List<Reserva>> callback) {
+        List<Reserva> userReservations = reservasPorUsuario.get(userId);
+        if (userReservations != null) {
+            // Simulando reservas históricas (últimos 30 días)
+            List<Reserva> historicReservations = new ArrayList<>();
+
+            // Para este ejemplo, consideramos las reservas con fecha 2023-06-15 a 2023-06-17 como históricas
+            for (Reserva reserva : userReservations) {
+                if (reserva.getFecha().compareTo("2023-06-18") < 0) {
+                    historicReservations.add(reserva);
+                }
+            }
+
+            callback.onSuccess(historicReservations);
+        } else {
+            callback.onSuccess(new ArrayList<>());
+        }
+    }
+
+    @Override
     public void createReservation(Reserva reserva, Callback callback) {
         // Implementation for creating a reservation
     }

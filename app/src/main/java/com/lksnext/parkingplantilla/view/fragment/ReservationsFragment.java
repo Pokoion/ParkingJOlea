@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -12,12 +11,10 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.lksnext.parkingplantilla.databinding.CardReservationCurrentBinding;
+import com.google.android.material.tabs.TabLayoutMediator;
+import com.lksnext.parkingplantilla.utils.ReservationsPagerAdapter;
 import com.lksnext.parkingplantilla.databinding.FragmentReservationsBinding;
-import com.lksnext.parkingplantilla.domain.Reserva;
 import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
-
-import java.util.List;
 
 public class ReservationsFragment extends Fragment {
 
@@ -25,7 +22,7 @@ public class ReservationsFragment extends Fragment {
     private ReservationsViewModel viewModel;
 
     public ReservationsFragment() {
-        // Es necesario un constructor vacio
+        // Constructor vacío requerido
     }
 
     @Override
@@ -38,21 +35,13 @@ public class ReservationsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize ViewModel
+        // Inicializar ViewModel
         viewModel = new ViewModelProvider(this).get(ReservationsViewModel.class);
 
-        // Setup observers
-        setupObservers();
+        // Configurar ViewPager2 y TabLayout
+        setupViewPager();
 
-        // Load reservations
-        viewModel.loadUserReservations();
-    }
-
-    private void setupObservers() {
-        // Observe reservations
-        viewModel.getReservations().observe(getViewLifecycleOwner(), this::displayReservations);
-
-        // Observe errors
+        // Observar errores
         viewModel.getError().observe(getViewLifecycleOwner(), errorMessage -> {
             if (errorMessage != null && !errorMessage.isEmpty()) {
                 Toast.makeText(getContext(), "Error: " + errorMessage, Toast.LENGTH_SHORT).show();
@@ -60,35 +49,19 @@ public class ReservationsFragment extends Fragment {
         });
     }
 
-    private void displayReservations(List<Reserva> reservas) {
-        LinearLayout container = binding.linearLayoutContainer;
+    private void setupViewPager() {
+        ReservationsPagerAdapter adapter = new ReservationsPagerAdapter(this);
+        binding.viewPager.setAdapter(adapter);
 
-        if (reservas == null || reservas.isEmpty()) {
-            container.setVisibility(View.GONE);
-
-        } else {
-            container.setVisibility(View.VISIBLE);
-
-            // Clear any existing views
-            container.removeAllViews();
-
-            // Inflate and add cards for each reservation
-            for (Reserva reserva : reservas) {
-                CardReservationCurrentBinding cardBinding = CardReservationCurrentBinding.inflate(
-                        getLayoutInflater(), container, false);
-
-                // Set the reservation data using data binding
-                cardBinding.setReserva(reserva);
-
-                // Add the card to the container
-                container.addView(cardBinding.getRoot());
-            }
-        }
+        // Configurar TabLayout con ViewPager2
+        new TabLayoutMediator(binding.tabLayout, binding.viewPager,
+                (tab, position) -> tab.setText(position == 0 ? "Current" : "Last 30 days")
+        ).attach();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        binding = null; // Avoid memory leaks
+        binding = null;
     }
 }

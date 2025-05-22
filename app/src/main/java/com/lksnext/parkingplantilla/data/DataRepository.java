@@ -77,6 +77,10 @@ public class DataRepository {
         dataSource.getReservations(userId, callback);
     }
 
+    public void getHistoricReservations(String userId, DataCallback<List<Reserva>> callback) {
+        dataSource.getHistoricReservations(userId, callback);
+    }
+
     public void getAllReservations(DataCallback<List<Reserva>> callback) {
         dataSource.getAllReservations(callback);
     }

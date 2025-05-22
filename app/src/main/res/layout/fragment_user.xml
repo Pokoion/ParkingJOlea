@@ -145,7 +145,7 @@
                         android:padding="16dp"
                         android:paddingStart="0dp"
                         android:paddingEnd="0dp"
-                        android:text="30 minute Start Reminder"
+                        android:text="15 minute End Reminder"
                         android:textAlignment="viewStart"
                         android:textSize="14sp"
                         app:layout_constraintEnd_toEndOf="parent"
@@ -165,7 +165,7 @@
                         android:id="@+id/textView3"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Get notified before reservation starts"
+                        android:text="Get notified before reservation ends"
                         app:layout_constraintStart_toStartOf="@+id/switchCompat3"
                         app:layout_constraintTop_toBottomOf="@+id/switchCompat3" />
 
