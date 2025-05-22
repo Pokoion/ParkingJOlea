@@ -4,20 +4,15 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.lksnext.parkingplantilla.databinding.CardReservationCurrentBinding;
 import com.lksnext.parkingplantilla.databinding.FragmentCurrentReservationsBinding;
-import com.lksnext.parkingplantilla.domain.Reserva;
+import com.lksnext.parkingplantilla.utils.ReservationsAdapter;
 import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
-
-import java.util.List;
 
 public class CurrentReservationsFragment extends Fragment {
 
@@ -34,32 +29,23 @@ public class CurrentReservationsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Inicializar adaptador
+        ReservationsAdapter adapter = new ReservationsAdapter();
+        binding.recyclerViewReservations.setAdapter(adapter);
+
         // Compartir ViewModel con el fragmento padre
         viewModel = new ViewModelProvider(requireParentFragment()).get(ReservationsViewModel.class);
 
         // Observar reservas actuales
-        viewModel.getReservations().observe(getViewLifecycleOwner(), this::displayReservations);
+        viewModel.getReservations().observe(getViewLifecycleOwner(), reservas -> {
+            if (reservas != null) {
+                adapter.setReservas(reservas);
+                binding.recyclerViewReservations.setVisibility(reservas.isEmpty() ? View.GONE : View.VISIBLE);
+            }
+        });
 
         // Cargar reservas actuales
         viewModel.loadUserReservations();
-    }
-
-    private void displayReservations(List<Reserva> reservas) {
-        LinearLayout container = binding.linearLayoutContainer;
-
-        if (reservas == null || reservas.isEmpty()) {
-            container.setVisibility(View.GONE);
-        } else {
-            container.setVisibility(View.VISIBLE);
-            container.removeAllViews();
-
-            for (Reserva reserva : reservas) {
-                CardReservationCurrentBinding cardBinding = CardReservationCurrentBinding.inflate(
-                        getLayoutInflater(), container, false);
-                cardBinding.setReserva(reserva);
-                container.addView(cardBinding.getRoot());
-            }
-        }
     }
 
     @Override

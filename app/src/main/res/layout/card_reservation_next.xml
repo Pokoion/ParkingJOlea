@@ -18,10 +18,24 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content"
+            android:padding="16dp">
 
             <TextView
-                android:id="@+id/tvReservationType"
+                android:id="@+id/timeUntilTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:text="En 2 días"
+                android:textColor="#3F51B5"
+                android:textSize="14sp"
+                android:textStyle="italic"
+                app:layout_constraintStart_toEndOf="@+id/placeTypeTextView"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/placeTypeTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
@@ -33,70 +47,45 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
-                android:id="@+id/tvPlace"
+                android:id="@+id/placeIdTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="@{reserva.plaza.id}"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="@+id/tvReservationType"
-                app:layout_constraintTop_toBottomOf="@+id/tvReservationType" />
+                app:layout_constraintStart_toStartOf="@+id/placeTypeTextView"
+                app:layout_constraintTop_toBottomOf="@+id/placeTypeTextView" />
 
             <TextView
-                android:id="@+id/tvDate"
+                android:id="@+id/dateTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:text="@{reserva.fecha}"
-                android:textSize="14sp"
-                app:layout_constraintStart_toStartOf="@+id/tvReservationType"
-                app:layout_constraintTop_toBottomOf="@+id/tvPlace" />
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="@+id/placeIdTextView"
+                app:layout_constraintTop_toBottomOf="@+id/placeIdTextView" />
 
             <TextView
-                android:id="@+id/tvTime"
+                android:id="@+id/timeTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:layout_marginBottom="16dp"
                 android:text="@{reserva.hora.toString()}"
-                android:textSize="14sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="@+id/tvReservationType"
-                app:layout_constraintTop_toBottomOf="@+id/tvDate" />
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="@+id/dateTextView"
+                app:layout_constraintTop_toBottomOf="@+id/dateTextView" />
 
             <ImageView
-                android:id="@+id/imgIcon"
-                android:layout_width="30dp"
-                android:layout_height="24dp"
+                android:id="@+id/placeIconImageView"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
                 app:imageResource="@{reserva.plaza.imageResource}"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:tint="@color/colorHint" />
-
-            <Button
-                android:id="@+id/editButton"
-                android:layout_width="100dp"
-                android:layout_height="40dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="16dp"
-                android:text="Edit"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/deleteButton" />
-
-            <Button
-                android:id="@+id/deleteButton"
-                android:layout_width="100dp"
-                android:layout_height="40dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="16dp"
-                android:text="Delete"
-                app:backgroundTint="@color/red"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
-
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>
 </layout>

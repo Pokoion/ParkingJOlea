@@ -16,8 +16,6 @@
         <!-- Fondo y textos -->
         <item name="android:textColorHint">@color/colorHint</item>
 
-        <!-- Estado de la barra de sistema -->
-        <item name="android:statusBarColor">@color/colorPrimaryVariant</item>
     </style>
 
     <!-- Estilos adicionales sin cambios -->

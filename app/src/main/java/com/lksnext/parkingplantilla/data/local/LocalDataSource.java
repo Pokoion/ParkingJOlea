@@ -7,12 +7,16 @@ import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.domain.Reserva;
 import com.lksnext.parkingplantilla.domain.User;
+import com.lksnext.parkingplantilla.utils.DateUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 public class LocalDataSource implements DataSource {
     public static final String ADMINEMAIL = "admin@example.com";
@@ -70,60 +74,78 @@ public class LocalDataSource implements DataSource {
         horas.add(new Hora(eightAM + 4*oneHour, eightAM + 5*oneHour)); // 12:00 - 13:00
         horas.add(new Hora(eightAM + 5*oneHour, eightAM + 6*oneHour)); // 13:00 - 14:00
         horas.add(new Hora(eightAM + 6*oneHour, eightAM + 7*oneHour)); // 14:00 - 15:00
-        horas.add(new Hora(eightAM + 7*oneHour, eightAM + 8*oneHour)); // 15:00 - 16:00
     }
 
     private void initReservations() {
+        // Obtener fecha y hora actual para hacer pruebas dinámicas
+        Date now = new Date();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(now);
+
+        // Formatear la fecha actual para usarla en las reservas
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String today = dateFormat.format(now);
+
+        // Calcular fecha de mañana
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        String tomorrow = dateFormat.format(calendar.getTime());
+
+        // Calcular hora actual en milisegundos desde medianoche
+        calendar.setTime(now);
+        int horaActual = calendar.get(Calendar.HOUR_OF_DAY);
+        int minutoActual = calendar.get(Calendar.MINUTE);
+        long currentTimeMs = horaActual * 3600000L + minutoActual * 60000L;
+
+        // Crear hora para reserva actual (desde ahora hasta 1 hora después)
+        Hora horaReservaActual = new Hora(currentTimeMs, currentTimeMs + 3600000);
+
+        // Crear hora para reserva de mañana (8:00 - 9:00)
+        Hora horaReservaMañana = new Hora(8 * 3600000, 9 * 3600000);
+
         // Admin reservations
         List<Reserva> adminReservas = new ArrayList<>();
 
-        Reserva r1 = new Reserva("2023-06-15", ADMINEMAIL,
-                UUID.randomUUID().toString(), plazas.get(0), horas.get(0));
+        // Reserva ACTUAL del admin (en curso ahora mismo)
+        Reserva r1 = new Reserva(today, ADMINEMAIL,
+                UUID.randomUUID().toString(), plazas.get(0), horaReservaActual);
         adminReservas.add(r1);
         todasReservas.add(r1);
 
-        Reserva r2 = new Reserva("2023-06-16", ADMINEMAIL,
-                UUID.randomUUID().toString(), plazas.get(1), horas.get(2));
+        // Reserva PRÓXIMA del admin (para mañana)
+        Reserva r2 = new Reserva(tomorrow, ADMINEMAIL,
+                UUID.randomUUID().toString(), plazas.get(1), horaReservaMañana);
         adminReservas.add(r2);
         todasReservas.add(r2);
 
-        Reserva r3 = new Reserva("2023-06-17", ADMINEMAIL,
-                UUID.randomUUID().toString(), plazas.get(2), horas.get(1));
+        // Algunas reservas históricas
+        calendar.setTime(now);
+        calendar.add(Calendar.DAY_OF_MONTH, -1);
+        String yesterday = dateFormat.format(calendar.getTime());
+
+        Reserva r3 = new Reserva(yesterday, ADMINEMAIL,
+                UUID.randomUUID().toString(), plazas.get(2), horas.get(0));
         adminReservas.add(r3);
         todasReservas.add(r3);
 
-        Reserva r4 = new Reserva("2023-06-18", ADMINEMAIL,
-                UUID.randomUUID().toString(), plazas.get(4), horas.get(3));
+        Reserva r4 = new Reserva("2023-06-16", ADMINEMAIL,
+                UUID.randomUUID().toString(), plazas.get(3), horas.get(2));
         adminReservas.add(r4);
         todasReservas.add(r4);
-
-        Reserva r5 = new Reserva("2023-06-19", ADMINEMAIL,
-                UUID.randomUUID().toString(), plazas.get(6), horas.get(4));
-        adminReservas.add(r5);
-        todasReservas.add(r5);
-
-        Reserva r6 = new Reserva("2023-06-20", ADMINEMAIL,
-                UUID.randomUUID().toString(), plazas.get(8), horas.get(5));
-        adminReservas.add(r6);
-        todasReservas.add(r6);
-
-        Reserva r7 = new Reserva("2023-06-21", ADMINEMAIL,
-                UUID.randomUUID().toString(), plazas.get(9), horas.get(6));
-        adminReservas.add(r7);
-        todasReservas.add(r7);
 
         reservasPorUsuario.put(ADMINEMAIL, adminReservas);
 
         // User reservations
         List<Reserva> userReservas = new ArrayList<>();
 
-        Reserva r8 = new Reserva("2023-06-15", USEREMAIL,
-                UUID.randomUUID().toString(), plazas.get(3), horas.get(1));
+        // Reserva actual para usuario normal
+        Reserva r8 = new Reserva(today, USEREMAIL,
+                UUID.randomUUID().toString(), plazas.get(5), horaReservaActual);
         userReservas.add(r8);
         todasReservas.add(r8);
 
-        Reserva r9 = new Reserva("2023-06-17", USEREMAIL,
-                UUID.randomUUID().toString(), plazas.get(5), horas.get(4));
+        // Reserva próxima para usuario normal
+        Reserva r9 = new Reserva(tomorrow, USEREMAIL,
+                UUID.randomUUID().toString(), plazas.get(6), horaReservaMañana);
         userReservas.add(r9);
         todasReservas.add(r9);
 
@@ -180,6 +202,81 @@ public class LocalDataSource implements DataSource {
         } else {
             callback.onSuccess(new ArrayList<>());
         }
+    }
+
+    @Override
+    public void getCurrentReservation(String userId, DataCallback<Reserva> callback) {
+        List<Reserva> userReservations = reservasPorUsuario.get(userId);
+        if (userReservations == null || userReservations.isEmpty()) {
+            callback.onSuccess(null);
+            return;
+        }
+
+        // Obtener la fecha y hora actual
+        Date now = new Date();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(now);
+
+        // Obtener fecha actual en formato "yyyy-MM-dd"
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String currentDate = dateFormat.format(now);
+
+        // Obtener hora actual en milisegundos desde medianoche
+        int horaActual = cal.get(Calendar.HOUR_OF_DAY);
+        int minutoActual = cal.get(Calendar.MINUTE);
+        long currentTimeMs = horaActual * 3600000L + minutoActual * 60000L;
+
+        // Inicializar reserva actual
+        Reserva currentReservation = null;
+
+        // Recorrer todas las reservas del usuario
+        for (Reserva reserva : userReservations) {
+            // Verificar si es del día actual
+            if (reserva.getFecha().equals(currentDate)) {
+                // Verificar si la hora actual está dentro del rango de la reserva
+                if (currentTimeMs >= reserva.getHora().getHoraInicio() &&
+                        currentTimeMs <= reserva.getHora().getHoraFin()) {
+                    currentReservation = reserva;
+                    break;
+                }
+            }
+        }
+
+        // Imprimir para depuración
+        System.out.println("Reserva actual encontrada: " + (currentReservation != null ?
+                currentReservation.getId() : "ninguna"));
+
+        callback.onSuccess(currentReservation);
+    }
+
+    @Override
+    public void getNextReservation(String userId, DataCallback<Reserva> callback) {
+        List<Reserva> userReservations = reservasPorUsuario.get(userId);
+        if (userReservations == null || userReservations.isEmpty()) {
+            callback.onSuccess(null);
+            return;
+        }
+
+        // Obtener la fecha y hora actual
+        Date now = new Date();
+        Reserva nextReservation = null;
+        Date nextDate = null;
+
+        for (Reserva reserva : userReservations) {
+            // Convertir fecha y hora de la reserva a Date para comparación
+            Date reservaDateTime = DateUtils.getReservaDateTime(reserva);
+
+            // Comprobar si es una reserva futura
+            if (reservaDateTime.after(now)) {
+                // Si no hay próxima reserva o esta es más cercana
+                if (nextReservation == null || reservaDateTime.before(nextDate)) {
+                    nextReservation = reserva;
+                    nextDate = reservaDateTime;
+                }
+            }
+        }
+
+        callback.onSuccess(nextReservation);
     }
 
     @Override
