@@ -164,4 +164,22 @@ public class ReservationsViewModel extends ViewModel {
             }
         });
     }
+
+    public void deleteReservation(String reservaId) {
+        isLoading.setValue(true);
+        repository.deleteReservation(reservaId, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                // Recargar las reservas después de eliminar
+                loadUserReservations();
+                isLoading.setValue(false);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                error.setValue("Error al eliminar la reserva: " + e.getMessage());
+                isLoading.setValue(false);
+            }
+        });
+    }
 }

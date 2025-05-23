@@ -97,7 +97,7 @@ public class DataRepository {
         dataSource.createReservation(reserva, callback);
     }
 
-    public void cancelReservation(String reservationId, Callback callback) {
-        dataSource.cancelReservation(reservationId, callback);
+    public void deleteReservation(String reservationId, DataCallback<Boolean> callback) {
+        dataSource.deleteReservation(reservationId, callback);
     }
 }

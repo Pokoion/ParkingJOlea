@@ -11,7 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.lksnext.parkingplantilla.databinding.FragmentCurrentReservationsBinding;
-import com.lksnext.parkingplantilla.utils.ReservationsAdapter;
+import com.lksnext.parkingplantilla.adapters.ReservationsAdapter;
 import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
 
 public class CurrentReservationsFragment extends Fragment {
@@ -30,7 +30,7 @@ public class CurrentReservationsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         // Inicializar adaptador
-        ReservationsAdapter adapter = new ReservationsAdapter();
+        ReservationsAdapter adapter = new ReservationsAdapter(viewModel);
         binding.recyclerViewReservations.setAdapter(adapter);
 
         // Compartir ViewModel con el fragmento padre

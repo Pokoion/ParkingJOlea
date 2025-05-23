@@ -1,4 +1,4 @@
-package com.lksnext.parkingplantilla.utils;
+package com.lksnext.parkingplantilla.adapters;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;

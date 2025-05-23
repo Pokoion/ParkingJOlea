@@ -1,6 +1,7 @@
 package com.lksnext.parkingplantilla.utils;
 
 import android.util.Patterns;
+import java.util.Calendar;
 
 public class Validators {
 
@@ -19,5 +20,39 @@ public class Validators {
 
     public static boolean areLoginFieldsValid(String email, String password) {
         return !email.trim().isEmpty() && !password.trim().isEmpty();
+    }
+
+    // En Validators.java - añadir estos métodos
+    public static boolean isValidReservationType(String type) {
+        return type != null && !type.isEmpty();
+    }
+
+    public static boolean isValidDate(String date) {
+        return date != null && !date.equals("Seleccionar fecha");
+    }
+
+    public static boolean isValidTimeSelection(String startTime, String endTime) {
+        return startTime != null && !startTime.equals("Hora inicio") &&
+                endTime != null && !endTime.equals("Hora fin");
+    }
+
+    public static boolean isValidTimeInterval(Calendar startTime, Calendar endTime) {
+        long diffMillis = endTime.getTimeInMillis() - startTime.getTimeInMillis();
+        int diffHours = (int) (diffMillis / (60 * 60 * 1000));
+
+        return diffMillis > 0 && diffHours <= 7;
+    }
+
+    public static String getTimeIntervalMessage(Calendar startTime, Calendar endTime) {
+        long diffMillis = endTime.getTimeInMillis() - startTime.getTimeInMillis();
+        int diffHours = (int) (diffMillis / (60 * 60 * 1000));
+
+        if (diffMillis <= 0) {
+            return "La hora de fin debe ser posterior a la de inicio";
+        } else if (diffHours > 7) {
+            return "El intervalo no puede ser mayor a 7 horas";
+        } else {
+            return "Intervalo de " + diffHours + " horas seleccionado";
+        }
     }
 }

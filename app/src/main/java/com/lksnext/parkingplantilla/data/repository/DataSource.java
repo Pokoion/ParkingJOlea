@@ -15,7 +15,7 @@ public interface DataSource {
     void getCurrentReservation(String userId, DataCallback<Reserva> callback);
     void getNextReservation(String userId, DataCallback<Reserva> callback);
     void createReservation(Reserva reserva, Callback callback);
-    void cancelReservation(String reservationId, Callback callback);
+    void deleteReservation(String reservationId, DataCallback<Boolean> callback);
 
     void login(String email, String password, DataCallback<User> callback);
     void register(String name, String email, String password, DataCallback<User> callback);

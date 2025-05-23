@@ -1,4 +1,4 @@
-package com.lksnext.parkingplantilla.utils;
+package com.lksnext.parkingplantilla.adapters;
 
 import android.widget.ImageView;
 import androidx.databinding.BindingAdapter;

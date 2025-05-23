@@ -9,9 +9,10 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.lksnext.parkingplantilla.adapter.ReservationTypeAdapter;
+import com.lksnext.parkingplantilla.adapters.ReservationTypeAdapter;
 import com.lksnext.parkingplantilla.databinding.ActivityCreateReservationBinding;
 import com.lksnext.parkingplantilla.domain.Plaza;
+import com.lksnext.parkingplantilla.utils.Validators;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,7 +38,9 @@ public class CreateReservationActivity extends AppCompatActivity {
         binding = ActivityCreateReservationBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        // Configurar la barra de herramientas
         setSupportActionBar(binding.toolbar);
+        // Habilitar el botón de retroceso
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle("Nueva Reserva");
 
@@ -57,6 +60,7 @@ public class CreateReservationActivity extends AppCompatActivity {
         binding.reservationTypeRecyclerView.setAdapter(adapter);
     }
 
+    // Configurar los spinners de selección de plaza
     private void setupParkingSpinners() {
         // Configurar spinner de filas (letras)
         String[] rows = {"A", "B", "C", "D", "E", "F"};
@@ -139,39 +143,30 @@ public class CreateReservationActivity extends AppCompatActivity {
     }
 
     private boolean validateTimeInterval() {
-        long diffMillis = endTime.getTimeInMillis() - startTime.getTimeInMillis();
-        int diffHours = (int) (diffMillis / (60 * 60 * 1000));
-
-        if (diffMillis <= 0) {
-            binding.timeWarningText.setText("La hora de fin debe ser posterior a la de inicio");
-            return false;
-        } else if (diffHours > 7) {
-            binding.timeWarningText.setText("El intervalo no puede ser mayor a 7 horas");
-            return false;
-        } else {
-            binding.timeWarningText.setText("Intervalo de " + diffHours + " horas seleccionado");
-            return true;
-        }
+        boolean isValid = Validators.isValidTimeInterval(startTime, endTime);
+        binding.timeWarningText.setText(Validators.getTimeIntervalMessage(startTime, endTime));
+        return isValid;
     }
 
     private void validateAndSave() {
-        if (selectedType == null) {
+        if (!Validators.isValidReservationType(selectedType)) {
             Toast.makeText(this, "Debes seleccionar un tipo de reserva", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (binding.datePickerButton.getText().toString().equals("Seleccionar fecha")) {
+        if (!Validators.isValidDate(binding.datePickerButton.getText().toString())) {
             Toast.makeText(this, "Debes seleccionar una fecha", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (binding.startTimeButton.getText().toString().equals("Hora inicio") ||
-                binding.endTimeButton.getText().toString().equals("Hora fin")) {
+        if (!Validators.isValidTimeSelection(
+                binding.startTimeButton.getText().toString(),
+                binding.endTimeButton.getText().toString())) {
             Toast.makeText(this, "Debes seleccionar el intervalo de horas", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (!validateTimeInterval()) {
+        if (!Validators.isValidTimeInterval(startTime, endTime)) {
             Toast.makeText(this, "El intervalo de horas no es válido", Toast.LENGTH_SHORT).show();
             return;
         }

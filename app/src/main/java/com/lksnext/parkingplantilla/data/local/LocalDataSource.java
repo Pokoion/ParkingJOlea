@@ -285,7 +285,7 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
-    public void cancelReservation(String reservationId, Callback callback) {
+    public void deleteReservation(String reservationId, DataCallback<Boolean> callback) {
         // Implementation for cancelling a reservation
     }
 

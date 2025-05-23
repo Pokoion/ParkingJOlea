@@ -12,7 +12,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.tabs.TabLayoutMediator;
-import com.lksnext.parkingplantilla.utils.ReservationsPagerAdapter;
+import com.lksnext.parkingplantilla.adapters.ReservationsPagerAdapter;
 import com.lksnext.parkingplantilla.databinding.FragmentReservationsBinding;
 import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
 

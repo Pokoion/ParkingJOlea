@@ -11,7 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.lksnext.parkingplantilla.databinding.FragmentHistoricReservationsBinding;
-import com.lksnext.parkingplantilla.utils.HistoricReservationsAdapter;
+import com.lksnext.parkingplantilla.adapters.HistoricReservationsAdapter;
 import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
 
 public class HistoricReservationsFragment extends Fragment {
