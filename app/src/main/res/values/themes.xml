@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.ParkingLKS" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <style name="Theme.ParkingLKS" parent="Theme.MaterialComponents.NoActionBar">
+        <!-- Fondo general -->
         <item name="android:windowBackground">@color/colorBackground</item>
         <item name="android:fontFamily">@font/montserratregular</item>
 
@@ -10,14 +10,53 @@
         <item name="colorOnPrimary">@color/colorOnPrimary</item>
 
         <!-- Colores secundarios -->
-        <item name="colorSecondary">@color/colorSecondary</item>
-        <item name="colorSecondaryVariant">@color/colorSecondaryVariant</item>
+        <item name="colorSecondary">@color/colorPrimary</item>
+        <item name="colorSecondaryVariant">@color/colorPrimaryVariant</item>
         <item name="colorOnSecondary">@color/colorOnSecondary</item>
 
-        <!-- Fondo y textos -->
+        <!-- Colores de superficie y fondo -->
+        <item name="colorSurface">@color/colorBackground</item>
+        <item name="colorOnSurface">@color/colorTextPrimary</item>
+        <item name="android:colorBackground">@color/colorBackground</item>
+
+        <!-- Colores de texto -->
+        <item name="android:textColorPrimary">@color/colorTextPrimary</item>
+        <item name="android:textColorSecondary">@color/colorTextSecondary</item>
+        <item name="android:textColor">@color/colorTextPrimary</item>
         <item name="android:textColorHint">@color/colorHint</item>
+
+        <!-- Colores de control para switches y elementos interactivos -->
+        <item name="colorControlActivated">@color/colorPrimary</item>
+        <item name="colorControlNormal">@color/colorHint</item>
+        <item name="android:colorControlActivated">@color/colorPrimary</item>
+        <item name="android:colorControlHighlight">@color/colorPrimaryVariant</item>
+        <item name="android:colorControlNormal">@color/colorHint</item>
+
+        <!-- Cambiar estilos de componentes específicos -->
+        <item name="switchStyle">@style/Widget.App.Switch</item>
+        <item name="radioButtonStyle">@style/Widget.App.RadioButton</item>
+        <item name="materialButtonStyle">@style/Widget.App.Button</item>
 
     </style>
 
-    <!-- Estilos adicionales sin cambios -->
+    <!-- Estilo para SwitchCompat -->
+    <style name="Widget.App.Switch" parent="Widget.AppCompat.CompoundButton.Switch">
+        <item name="android:textColor">@color/colorTextPrimary</item>
+        <item name="thumbTint">@drawable/switch_thumb_selector</item>
+        <item name="trackTint">@drawable/switch_track_selector</item>
+    </style>
+
+    <!-- Estilo para RadioButton -->
+    <style name="Widget.App.RadioButton" parent="Widget.AppCompat.CompoundButton.RadioButton">
+        <item name="android:textColor">@color/colorTextPrimary</item>
+        <item name="android:buttonTint">@color/colorPrimary</item>
+    </style>
+
+    <!-- Estilo para Button -->
+    <style name="Widget.App.Button" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/colorPrimary</item>
+        <item name="android:textColor">@color/colorOnPrimary</item>
+        <item name="cornerRadius">8dp</item>
+    </style>
+
 </resources>

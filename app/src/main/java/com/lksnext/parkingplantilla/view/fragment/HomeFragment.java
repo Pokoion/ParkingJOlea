@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.content.Intent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,6 +16,7 @@ import com.lksnext.parkingplantilla.databinding.CardReservationNextBinding;
 import com.lksnext.parkingplantilla.databinding.FragmentHomeBinding;
 import com.lksnext.parkingplantilla.domain.Reserva;
 import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
+import com.lksnext.parkingplantilla.view.activity.CreateReservationActivity;
 
 public class HomeFragment extends Fragment {
 
@@ -58,16 +60,17 @@ public class HomeFragment extends Fragment {
 
         // Configurar FAB para crear nueva reserva
         binding.createReservationButton.setOnClickListener(v -> {
-            // Navegar a pantalla de creación de reserva
-            // NavHostFragment.findNavController(this).navigate(R.id.action_homeFragment_to_createReservationFragment);
+            Intent intent = new Intent(requireContext(), CreateReservationActivity.class);
+            startActivity(intent);
         });
 
         // Aumentar el espaciado vertical para los mensajes de "no hay reservas"
         binding.noCurrentReservationText.setPadding(0, 40, 0, 40);
         binding.noNextReservationText.setPadding(0, 40, 0, 40);
 
-        // Cargar datos utilizando el método simplificado
+        // Cargar datos
         viewModel.loadCurrentAndNextReservations();
+
     }
 
     private void updateCurrentReservation(Reserva reserva) {

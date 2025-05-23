@@ -15,4 +15,9 @@
     <color name="colorContainerBackground">#E0E0E0</color>
     <color name="colorHint">#757575</color>
     <color name="red">#FF6B6B</color>
+
+    <!-- Colores específicos para textos -->
+    <color name="colorTextPrimary">#212121</color>
+    <color name="colorTextSecondary">#424242</color>
+    <color name="colorTextTitle">#000000</color>
 </resources>
