@@ -90,4 +90,24 @@ public class ReservationTypeAdapter extends RecyclerView.Adapter<ReservationType
             cardView = (CardView) itemView;
         }
     }
+
+    public void selectType(String type) {
+        // Busca el tipo en la lista de tipos disponibles
+        for (int i = 0; i < types.size(); i++) {
+            if (types.get(i).equals(type)) {
+                // Guarda la posición anterior para actualizar ese item
+                int previousSelected = selectedPosition;
+                // Actualiza el índice seleccionado
+                selectedPosition = i;
+                // Notifica al adaptador para actualizar los items cambiados
+                notifyItemChanged(previousSelected);
+                notifyItemChanged(selectedPosition);
+                // Notifica al listener
+                if (listener != null) {
+                    listener.onTypeSelected(type);
+                }
+                break;
+            }
+        }
+    }
 }

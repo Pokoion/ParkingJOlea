@@ -29,12 +29,10 @@ public class CurrentReservationsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Inicializar adaptador
+        viewModel = new ViewModelProvider(requireParentFragment()).get(ReservationsViewModel.class);
+
         ReservationsAdapter adapter = new ReservationsAdapter(viewModel);
         binding.recyclerViewReservations.setAdapter(adapter);
-
-        // Compartir ViewModel con el fragmento padre
-        viewModel = new ViewModelProvider(requireParentFragment()).get(ReservationsViewModel.class);
 
         // Observar reservas actuales
         viewModel.getReservations().observe(getViewLifecycleOwner(), reservas -> {

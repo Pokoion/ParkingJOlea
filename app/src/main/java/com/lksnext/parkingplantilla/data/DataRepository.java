@@ -89,15 +89,21 @@ public class DataRepository {
         dataSource.getNextReservation(userId, callback);
     }
 
-    public void getAllReservations(DataCallback<List<Reserva>> callback) {
-        dataSource.getAllReservations(callback);
-    }
-
-    public void createReservation(Reserva reserva, Callback callback) {
+    public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
         dataSource.createReservation(reserva, callback);
     }
 
     public void deleteReservation(String reservationId, DataCallback<Boolean> callback) {
         dataSource.deleteReservation(reservationId, callback);
+    }
+
+    public void updateReservation(String reservationId, String date, long startTime, long endTime,
+                                  String reservationType, String plazaId, DataCallback<Boolean> callback) {
+        dataSource.updateReservation(reservationId, date, startTime, endTime, reservationType, plazaId, callback);
+    }
+
+    public void checkAvailability(String date, long startTimeMs, long endTimeMs,
+                                  String type, String plazaId, DataCallback<Boolean> callback) {
+        dataSource.checkAvailability(date, startTimeMs, endTimeMs, type, plazaId, callback);
     }
 }

@@ -1,7 +1,6 @@
 package com.lksnext.parkingplantilla.data.local;
 
 import com.lksnext.parkingplantilla.data.repository.DataSource;
-import com.lksnext.parkingplantilla.domain.Callback;
 import com.lksnext.parkingplantilla.domain.DataCallback;
 import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
@@ -186,21 +185,36 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public void getHistoricReservations(String userId, DataCallback<List<Reserva>> callback) {
-        List<Reserva> userReservations = reservasPorUsuario.get(userId);
-        if (userReservations != null) {
-            // Simulando reservas históricas (últimos 30 días)
-            List<Reserva> historicReservations = new ArrayList<>();
+        try {
+            List<Reserva> userReservations = reservasPorUsuario.get(userId);
+            if (userReservations != null) {
+                List<Reserva> historicReservations = new ArrayList<>();
 
-            // Para este ejemplo, consideramos las reservas con fecha 2023-06-15 a 2023-06-17 como históricas
-            for (Reserva reserva : userReservations) {
-                if (reserva.getFecha().compareTo("2023-06-18") < 0) {
-                    historicReservations.add(reserva);
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                String currentDateStr = dateFormat.format(new Date());
+
+                Calendar calendar = Calendar.getInstance();
+                int horaActual = calendar.get(Calendar.HOUR_OF_DAY);
+                int minutoActual = calendar.get(Calendar.MINUTE);
+                long currentTimeMs = horaActual * 3600000L + minutoActual * 60000L;
+
+                for (Reserva reserva : userReservations) {
+                    if (reserva.getFecha().compareTo(currentDateStr) < 0) {
+                        historicReservations.add(reserva);
+                    }
+                    else if (reserva.getFecha().equals(currentDateStr) &&
+                            reserva.getHora().getHoraFin() < currentTimeMs) {
+                        historicReservations.add(reserva);
+                    }
                 }
-            }
 
-            callback.onSuccess(historicReservations);
-        } else {
-            callback.onSuccess(new ArrayList<>());
+                callback.onSuccess(historicReservations);
+            } else {
+                callback.onSuccess(new ArrayList<>());
+            }
+        } catch (Exception e) {
+            System.out.println("Error al obtener reservas históricas: " + e.getMessage());
+            callback.onFailure(e);
         }
     }
 
@@ -280,17 +294,189 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
-    public void createReservation(Reserva reserva, Callback callback) {
-        // Implementation for creating a reservation
-    }
-
-    @Override
     public void deleteReservation(String reservationId, DataCallback<Boolean> callback) {
-        // Implementation for cancelling a reservation
+        try {
+            Reserva reservaToDelete = null;
+            for (Reserva reserva : todasReservas) {
+                if (reserva.getId().equals(reservationId)) {
+                    reservaToDelete = reserva;
+                    break;
+                }
+            }
+
+            if (reservaToDelete == null) {
+                callback.onSuccess(false);
+                return;
+            }
+
+            todasReservas.remove(reservaToDelete);
+
+            String userId = reservaToDelete.getUsuario();
+            List<Reserva> userReservations = reservasPorUsuario.get(userId);
+            if (userReservations != null) {
+                userReservations.remove(reservaToDelete);
+            }
+
+            callback.onSuccess(true);
+        } catch (Exception e) {
+            callback.onFailure(e);
+        }
     }
 
     @Override
-    public void getAllReservations(DataCallback<List<Reserva>> callback) {
-        // Implementation for retrieving all reservations
+    public void updateReservation(String reservationId, String date, long startTime, long endTime,
+                                  String reservationType, String plazaId, DataCallback<Boolean> callback) {
+        try {
+            // Buscar la reserva a actualizar
+            Reserva reservaToUpdate = null;
+            for (Reserva reserva : todasReservas) {
+                if (reserva.getId().equals(reservationId)) {
+                    reservaToUpdate = reserva;
+                    break;
+                }
+            }
+
+            if (reservaToUpdate == null) {
+                callback.onFailure(new Exception("Reserva no encontrada"));
+                return;
+            }
+
+            // Actualizar fecha
+            reservaToUpdate.setFecha(date);
+
+            // Crear y actualizar el objeto Hora
+            Hora nuevaHora = new Hora(startTime, endTime);
+            reservaToUpdate.setHora(nuevaHora);
+
+            // Si se especificó una plaza, actualizarla
+            if (plazaId != null && !plazaId.isEmpty()) {
+                Plaza plazaActualizada = null;
+
+                // Buscar por ID de plaza específico
+                for (Plaza plaza : plazas) {
+                    if (plaza.getId().equals(plazaId)) {
+                        plazaActualizada = plaza;
+                        break;
+                    }
+                }
+
+                if (plazaActualizada != null) {
+                    reservaToUpdate.setPlaza(plazaActualizada);
+                } else {
+                    callback.onFailure(new Exception("Plaza no encontrada"));
+                    return;
+                }
+            } else if (reservationType != null) {
+                // Si solo se especificó el tipo pero no una plaza específica
+                // buscar una plaza disponible del tipo especificado
+                for (Plaza plaza : plazas) {
+                    if (plaza.getTipo().equals(reservationType)) {
+                        reservaToUpdate.setPlaza(plaza);
+                        break;
+                    }
+                }
+            }
+
+            callback.onSuccess(true);
+        } catch (Exception e) {
+            callback.onFailure(e);
+        }
+    }
+
+    @Override
+    public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
+        try {
+            // Verificar si la plaza existe, si se especificó una
+            if (reserva.getPlaza() != null && reserva.getPlaza().getId() != null) {
+                boolean plazaExists = false;
+                for (Plaza plaza : plazas) {
+                    if (plaza.getId().equals(reserva.getPlaza().getId())) {
+                        plazaExists = true;
+                        break;
+                    }
+                }
+                if (!plazaExists) {
+                    callback.onFailure(new Exception("Plaza no encontrada"));
+                    return;
+                }
+            } else {
+                // Buscar una plaza disponible del tipo solicitado
+                Plaza plazaDisponible = null;
+                for (Plaza plaza : plazas) {
+                    if (plaza.getTipo().equals(reserva.getPlaza().getTipo())) {
+                        plazaDisponible = plaza;
+                        break;
+                    }
+                }
+
+                if (plazaDisponible == null) {
+                    callback.onFailure(new Exception("No hay plazas disponibles del tipo solicitado"));
+                    return;
+                }
+
+                reserva.setPlaza(plazaDisponible);
+            }
+
+            // Asignar ID si no tiene uno
+            if (reserva.getId() == null || reserva.getId().isEmpty()) {
+                reserva.setId(UUID.randomUUID().toString());
+            }
+
+            // Agregar la reserva a las colecciones correspondientes
+            todasReservas.add(reserva);
+
+            // Agregar a las reservas del usuario
+            String userId = reserva.getUsuario();
+            List<Reserva> userReservations = reservasPorUsuario.get(userId);
+            if (userReservations == null) {
+                userReservations = new ArrayList<>();
+                reservasPorUsuario.put(userId, userReservations);
+            }
+            userReservations.add(reserva);
+
+            callback.onSuccess(true);
+        } catch (Exception e) {
+            System.out.println("Error al crear reserva: " + e.getMessage());
+            callback.onFailure(e);
+        }
+    }
+
+    @Override
+    public void checkAvailability(String date, long startTimeMs, long endTimeMs,
+                                  String type, String plazaId, DataCallback<Boolean> callback) {
+        try {
+            // Verificar si hay alguna reserva que se solapa con la fecha, hora y plaza solicitada
+            boolean isAvailable = true;
+
+            for (Reserva reserva : todasReservas) {
+                // Verificar si es la misma fecha
+                if (reserva.getFecha().equals(date)) {
+                    // Verificar si hay solapamiento de horarios
+                    long reservaStart = reserva.getHora().getHoraInicio();
+                    long reservaEnd = reserva.getHora().getHoraFin();
+
+                    boolean timeOverlap = (startTimeMs < reservaEnd && endTimeMs > reservaStart);
+
+                    // Si es la misma plaza o no se especificó plaza (verificando solo tipo)
+                    boolean sameSpot = false;
+                    if (plazaId != null && !plazaId.isEmpty()) {
+                        sameSpot = reserva.getPlaza().getId().equals(plazaId);
+                    } else {
+                        // Si no se especificó plaza, verificar por tipo
+                        sameSpot = reserva.getPlaza().getTipo().equals(type);
+                    }
+
+                    // Si hay solapamiento de tiempo y es la misma plaza, no está disponible
+                    if (timeOverlap && sameSpot) {
+                        isAvailable = false;
+                        break;
+                    }
+                }
+            }
+
+            callback.onSuccess(isAvailable);
+        } catch (Exception e) {
+            callback.onFailure(e);
+        }
     }
 }

@@ -14,6 +14,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.lksnext.parkingplantilla.R;
 import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
 import android.content.DialogInterface;
+import android.content.Intent;
+import com.lksnext.parkingplantilla.view.activity.CreateReservationActivity;
 
 public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapter.ReservationViewHolder> {
 
@@ -55,9 +57,14 @@ public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapte
             super(binding.getRoot());
             this.binding = binding;
 
-            // Configurar el botón Delete para mostrar el diálogo de confirmación
+            // Boton de eliminar
             binding.deleteButton.setOnClickListener(v ->
                     showDeleteConfirmationDialog(binding.getRoot().getContext(),
+                            binding.getReserva()));
+
+            // Boton de editar
+            binding.editButton.setOnClickListener(v ->
+                    openEditReservationActivity(binding.getRoot().getContext(),
                             binding.getReserva()));
         }
 
@@ -80,6 +87,18 @@ public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapte
             // Botón positivo (Eliminar) en color rojo
             dialog.getButton(DialogInterface.BUTTON_POSITIVE)
                     .setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.red));
+        }
+
+        private void openEditReservationActivity(Context context, Reserva reserva) {
+            Intent intent = new Intent(context, CreateReservationActivity.class);
+            intent.putExtra("EDIT_MODE", true);
+            intent.putExtra("RESERVATION_ID", reserva.getId());
+            intent.putExtra("RESERVATION_TYPE", reserva.getPlaza().getTipo());
+            intent.putExtra("RESERVATION_DATE", reserva.getFecha());
+            intent.putExtra("RESERVATION_START_TIME", reserva.getHora().getHoraInicio());
+            intent.putExtra("RESERVATION_END_TIME", reserva.getHora().getHoraFin());
+            intent.putExtra("RESERVATION_SPOT", reserva.getPlaza().getId());
+            context.startActivity(intent);
         }
 
         public void bind(Reserva reserva) {

@@ -51,8 +51,8 @@ public class UserFragment extends Fragment {
         binding.logoutButton.setOnClickListener(v -> userViewModel.logout());
 
         if (userViewModel.getCurrentUser() != null) {
-            binding.textView4.setText(userViewModel.getCurrentUser().getName());
-            binding.textView5.setText(userViewModel.getCurrentUser().getEmail());
+            binding.userNameText.setText(userViewModel.getCurrentUser().getName());
+            binding.userEmailText.setText(userViewModel.getCurrentUser().getEmail());
         }
 
         // Configurar el RadioGroup para el tema
@@ -64,15 +64,15 @@ public class UserFragment extends Fragment {
 
     private void setupNotificationSwitches() {
         // Establecer el estado inicial de los switches según las preferencias guardadas
-        binding.switchCompat.setChecked(userViewModel.isStartReminderEnabled());
-        binding.switchCompat3.setChecked(userViewModel.isEndReminderEnabled());
+        binding.startReminderSwitch.setChecked(userViewModel.isStartReminderEnabled());
+        binding.endReminderSwitch.setChecked(userViewModel.isEndReminderEnabled());
 
         // Configurar listeners para los switches
-        binding.switchCompat.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        binding.startReminderSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             userViewModel.setStartReminderEnabled(isChecked);
         });
 
-        binding.switchCompat3.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        binding.endReminderSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             userViewModel.setEndReminderEnabled(isChecked);
         });
     }

@@ -43,4 +43,57 @@ public class DateUtils {
             return calendar.getTime();
         }
     }
+
+    /**
+     * Verifica si una reserva es histórica (ya pasó)
+     */
+    public static boolean isHistoricReservation(Reserva reserva) {
+        Date now = new Date();
+        Date reservaEndTime = getReservaEndTime(reserva);
+        return reservaEndTime.before(now);
+    }
+
+    /**
+     * Verifica si una reserva está actualmente en curso
+     */
+    public static boolean isOngoingReservation(Reserva reserva) {
+        Date now = new Date();
+        Date startTime = getReservaDateTime(reserva);
+        Date endTime = getReservaEndTime(reserva);
+        return now.after(startTime) && now.before(endTime);
+    }
+
+    /**
+     * Verifica si una reserva es futura (aún no ha comenzado)
+     */
+    public static boolean isFutureReservation(Reserva reserva) {
+        Date now = new Date();
+        Date startTime = getReservaDateTime(reserva);
+        return startTime.after(now);
+    }
+
+    /**
+     * Formatea la fecha de una reserva para mostrar en la UI
+     */
+    public static String formatReservaDate(Reserva reserva) {
+        try {
+            SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd");
+            SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy");
+            Date date = inputFormat.parse(reserva.getFecha());
+            return outputFormat.format(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return reserva.getFecha();
+        }
+    }
+
+    /**
+     * Formatea la hora de una reserva para mostrar en la UI
+     */
+    public static String formatReservaTime(Reserva reserva) {
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+        Date startTime = new Date(reserva.getHora().getHoraInicio());
+        Date endTime = new Date(reserva.getHora().getHoraFin());
+        return timeFormat.format(startTime) + " - " + timeFormat.format(endTime);
+    }
 }
