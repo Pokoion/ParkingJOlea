@@ -1,12 +1,18 @@
 package com.lksnext.parkingplantilla.domain;
 
 public class Reserva {
+    public enum Estado {
+        ACTIVA,
+        FINALIZADA,
+        CANCELADA
+    }
 
     String fecha, usuario, id;
 
     Plaza plaza;
 
     Hora hora;
+    Estado estado;
 
     public Reserva() {
 
@@ -18,6 +24,7 @@ public class Reserva {
         this.plaza = plaza;
         this.hora = hora;
         this.id = id;
+        this.estado = Estado.ACTIVA;
     }
 
     public String getFecha() {
@@ -59,4 +66,13 @@ public class Reserva {
     public void setHora(Hora hora) {
         this.hora = hora;
     }
+
+    public Estado getEstado() {
+        return estado;
+    }
+
+    public void setEstado(Estado estado) {
+        this.estado = estado;
+    }
+
 }

@@ -50,16 +50,31 @@ public class LocalDataSource implements DataSource {
     }
 
     private void initPlazas() {
-        plazas.add(new Plaza("A-1", Plaza.TIPO_STANDARD));
-        plazas.add(new Plaza("A-2", Plaza.TIPO_STANDARD));
-        plazas.add(new Plaza("A-3", Plaza.TIPO_STANDARD));
-        plazas.add(new Plaza("B-1", Plaza.TIPO_MOTORCYCLE));
-        plazas.add(new Plaza("B-2", Plaza.TIPO_MOTORCYCLE));
-        plazas.add(new Plaza("C-1", Plaza.TIPO_CV_CHARGER));
-        plazas.add(new Plaza("C-2", Plaza.TIPO_CV_CHARGER));
-        plazas.add(new Plaza("D-1", Plaza.TIPO_DISABLED));
-        plazas.add(new Plaza("D-2", Plaza.TIPO_DISABLED));
-        plazas.add(new Plaza("E-1", Plaza.TIPO_STANDARD));
+        // Plazas Standard (filas A-D, 10 plazas por fila)
+        for (char fila = 'A'; fila <= 'D'; fila++) {
+            for (int numero = 1; numero <= 10; numero++) {
+                String id = fila + "-" + numero;
+                plazas.add(new Plaza(id, Plaza.TIPO_STANDARD));
+            }
+        }
+
+        // Plazas para motos (fila E, 10 plazas)
+        for (int numero = 1; numero <= 10; numero++) {
+            String id = "E-" + numero;
+            plazas.add(new Plaza(id, Plaza.TIPO_MOTORCYCLE));
+        }
+
+        // Plazas para discapacitados (fila F, 5 plazas)
+        for (int numero = 1; numero <= 5; numero++) {
+            String id = "F-" + numero;
+            plazas.add(new Plaza(id, Plaza.TIPO_DISABLED));
+        }
+
+        // Plazas con cargador eléctrico (fila G, 10 plazas)
+        for (int numero = 1; numero <= 10; numero++) {
+            String id = "G-" + numero;
+            plazas.add(new Plaza(id, Plaza.TIPO_CV_CHARGER));
+        }
     }
 
     private void initHoras() {
@@ -181,7 +196,6 @@ public class LocalDataSource implements DataSource {
 
             callback.onSuccess(historicReservations);
         } catch (Exception e) {
-            System.out.println("Error al obtener reservas históricas: " + e.getMessage());
             callback.onFailure(e);
         }
     }
@@ -367,7 +381,6 @@ public class LocalDataSource implements DataSource {
 
             callback.onSuccess(true);
         } catch (Exception e) {
-            System.out.println("Error al crear reserva: " + e.getMessage());
             callback.onFailure(e);
         }
     }

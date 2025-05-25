@@ -1,5 +1,7 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -258,7 +260,6 @@ public class ReservationsViewModel extends ViewModel {
         if (reserva.getId() == null || reserva.getId().isEmpty()) {
             reserva.setId(UUID.randomUUID().toString());
         }
-
         repository.createReservation(reserva, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean success) {
