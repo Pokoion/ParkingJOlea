@@ -16,15 +16,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.lksnext.parkingplantilla.R;
 import com.lksnext.parkingplantilla.adapters.ReservationTypeAdapter;
 import com.lksnext.parkingplantilla.databinding.ActivityCreateReservationBinding;
+import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
+import com.lksnext.parkingplantilla.domain.Reserva;
+import com.lksnext.parkingplantilla.utils.DateUtils;
 import com.lksnext.parkingplantilla.utils.Validators;
 import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 public class CreateReservationActivity extends AppCompatActivity
         implements ReservationTypeAdapter.OnTypeSelectedListener {
@@ -38,15 +39,15 @@ public class CreateReservationActivity extends AppCompatActivity
     private boolean isEditMode = false;
     private String reservationId = null;
 
-
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-    private SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+    private ReservationsViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityCreateReservationBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        viewModel = new ViewModelProvider(this).get(ReservationsViewModel.class);
 
         // Configurar la barra de herramientas
         setSupportActionBar(binding.toolbar);
@@ -86,32 +87,36 @@ public class CreateReservationActivity extends AppCompatActivity
         adapter.selectType(type);
         selectedType = type;
 
-        // Configurar fecha
+        // Configurar fecha usando DateUtils
         try {
-            SimpleDateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            selectedDate.setTime(apiFormat.parse(date));
-            binding.datePickerButton.setText(dateFormat.format(selectedDate.getTime()));
+            selectedDate.setTime(DateUtils.getReservaDateTime(
+                    new Reserva(date, "", "", null,
+                            new Hora(startTimeMs, endTimeMs))));
+            binding.datePickerButton.setText(DateUtils.formatDateForUi(selectedDate));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // Configurar horas
+        // Configurar horas usando DateUtils
         startTime.setTimeInMillis(startTime.getTimeInMillis() - startTime.getTimeInMillis() % (60 * 1000) + startTimeMs);
         endTime.setTimeInMillis(endTime.getTimeInMillis() - endTime.getTimeInMillis() % (60 * 1000) + endTimeMs);
-        binding.startTimeButton.setText(timeFormat.format(startTime.getTime()));
-        binding.endTimeButton.setText(timeFormat.format(endTime.getTime()));
+        binding.startTimeButton.setText(DateUtils.formatTimeFromMs(startTimeMs));
+        binding.endTimeButton.setText(DateUtils.formatTimeFromMs(endTimeMs));
 
         // Configurar plaza
         if (spot != null && !spot.isEmpty() && spot.contains("-")) {
             binding.manualParkingRadioButton.setChecked(true);
             String[] spotParts = spot.split("-");
             if (spotParts.length == 2) {
-                // Seleccionar fila y número en los spinners
+                // Aquí iría el código para seleccionar fila y número en los spinners
                 int rowPosition = getPositionInAdapter(binding.parkingRowSpinner, spotParts[0]);
-                int numberPosition = getPositionInAdapter(binding.parkingNumberSpinner, spotParts[1]);
-
-                if (rowPosition >= 0) binding.parkingRowSpinner.setSelection(rowPosition);
-                if (numberPosition >= 0) binding.parkingNumberSpinner.setSelection(numberPosition);
+                if (rowPosition >= 0) {
+                    binding.parkingRowSpinner.setSelection(rowPosition);
+                    int numberPosition = getPositionInAdapter(binding.parkingNumberSpinner, spotParts[1]);
+                    if (numberPosition >= 0) {
+                        binding.parkingNumberSpinner.setSelection(numberPosition);
+                    }
+                }
             }
         } else {
             binding.randomParkingRadioButton.setChecked(true);
@@ -119,9 +124,9 @@ public class CreateReservationActivity extends AppCompatActivity
     }
 
     private int getPositionInAdapter(Spinner spinner, String value) {
-        ArrayAdapter adapter = (ArrayAdapter) spinner.getAdapter();
-        for (int i = 0; i < adapter.getCount(); i++) {
-            if (adapter.getItem(i).toString().equals(value)) {
+        ArrayAdapter<?> arrayAdapter = (ArrayAdapter<?>) spinner.getAdapter();
+        for (int i = 0; i < arrayAdapter.getCount(); i++) {
+            if (arrayAdapter.getItem(i).toString().equals(value)) {
                 return i;
             }
         }
@@ -180,6 +185,9 @@ public class CreateReservationActivity extends AppCompatActivity
                 // Para cargadores eléctricos
                 availableRows.add("G");
                 break;
+            default:
+                Toast.makeText(this, "Tipo de reserva no válido", Toast.LENGTH_SHORT).show();
+                return;
         }
 
         // Actualizar el adapter del spinner de filas
@@ -271,7 +279,7 @@ public class CreateReservationActivity extends AppCompatActivity
                     selectedDate.set(Calendar.YEAR, year);
                     selectedDate.set(Calendar.MONTH, month);
                     selectedDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                    binding.datePickerButton.setText(dateFormat.format(selectedDate.getTime()));
+                    binding.datePickerButton.setText(DateUtils.formatDateForUi(selectedDate));
                 },
                 today.get(Calendar.YEAR),
                 today.get(Calendar.MONTH),
@@ -292,11 +300,13 @@ public class CreateReservationActivity extends AppCompatActivity
                     if (isStartTime) {
                         startTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
                         startTime.set(Calendar.MINUTE, minute);
-                        binding.startTimeButton.setText(timeFormat.format(startTime.getTime()));
+                        binding.startTimeButton.setText(DateUtils.formatTimeFromMs(
+                                DateUtils.timeToMs(hourOfDay, minute)));
                     } else {
                         endTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
                         endTime.set(Calendar.MINUTE, minute);
-                        binding.endTimeButton.setText(timeFormat.format(endTime.getTime()));
+                        binding.endTimeButton.setText(DateUtils.formatTimeFromMs(
+                                DateUtils.timeToMs(hourOfDay, minute)));
                     }
                     validateTimeInterval();
                 },
@@ -319,18 +329,25 @@ public class CreateReservationActivity extends AppCompatActivity
             return;
         }
 
-        // Preparar los datos de la reserva
         String plazaId = getSelectedPlazaId();
 
-        // Crear el ViewModel si no existe
-        ReservationsViewModel viewModel = new ViewModelProvider(this).get(ReservationsViewModel.class);
+        String apiDate = DateUtils.formatDateForApi(selectedDate);
+
+        long startTimeMs = DateUtils.timeToMs(
+                startTime.get(Calendar.HOUR_OF_DAY),
+                startTime.get(Calendar.MINUTE));
+        long endTimeMs = DateUtils.timeToMs(
+                endTime.get(Calendar.HOUR_OF_DAY),
+                endTime.get(Calendar.MINUTE));
+
+        Hora hora = new Hora(startTimeMs, endTimeMs);
+        Plaza plaza = new Plaza(plazaId, selectedType);
+        Reserva reserva = new Reserva(apiDate, "", reservationId, plaza, hora);
 
         if (isEditMode && reservationId != null) {
-            // Actualizar reserva existente
-            updateExistingReservation(viewModel, plazaId);
+            updateExistingReservation(reserva);
         } else {
-            // Verificar disponibilidad y crear nueva reserva
-            checkAvailabilityAndCreate(viewModel, plazaId);
+            checkAvailabilityAndCreate(reserva);
         }
     }
 
@@ -371,66 +388,41 @@ public class CreateReservationActivity extends AppCompatActivity
         return null; // Para selección aleatoria
     }
 
-    private void checkAvailabilityAndCreate(ReservationsViewModel viewModel, String plazaId) {
-        // Formatear fecha para la API (yyyy-MM-dd)
-        SimpleDateFormat apiDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        String formattedDate = apiDateFormat.format(selectedDate.getTime());
-
-        // Calcular tiempos en milisegundos (desde medianoche)
-        long startTimeMs = startTime.get(Calendar.HOUR_OF_DAY) * 3600000L +
-                startTime.get(Calendar.MINUTE) * 60000L;
-        long endTimeMs = endTime.get(Calendar.HOUR_OF_DAY) * 3600000L +
-                endTime.get(Calendar.MINUTE) * 60000L;
-
-        // Verificar disponibilidad
-        viewModel.checkReservationAvailability(formattedDate, startTimeMs, endTimeMs, selectedType, plazaId)
-                .observe(this, result -> {
-                    if (result != null) {
-                        if (result) {
-                            // Disponible, crear la reserva
-                            createReservation(viewModel, formattedDate, startTimeMs, endTimeMs, plazaId);
-                        } else {
-                            // No disponible
-                            Toast.makeText(this, "Ya existe una reserva para esa fecha, hora o plaza",
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
+    private void checkAvailabilityAndCreate(Reserva reserva) {
+        // Verificar disponibilidad usando el objeto Reserva directamente
+        viewModel.checkReservationAvailability(reserva).observe(this, result -> {
+            if (result != null) {
+                if (result) {
+                    // Disponible, crear la reserva
+                    createReservation(reserva);
+                } else {
+                    // No disponible
+                    Toast.makeText(this, "Ya existe una reserva para esa fecha, hora o plaza",
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
-    private void createReservation(ReservationsViewModel viewModel, String date, long startTimeMs,
-                                   long endTimeMs, String plazaId) {
-        viewModel.createReservation(date, startTimeMs, endTimeMs, selectedType, plazaId)
-                .observe(this, success -> {
-                    if (success != null && success) {
-                        Toast.makeText(this, "Reserva creada correctamente", Toast.LENGTH_SHORT).show();
-                        finish();
-                    } else {
-                        Toast.makeText(this, "Error al crear la reserva", Toast.LENGTH_SHORT).show();
-                    }
-                });
+    private void createReservation(Reserva reserva) {
+        viewModel.createReservation(reserva).observe(this, result -> {
+            if (result != null && result) {
+                Toast.makeText(this, "Reserva creada correctamente", Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+                Toast.makeText(this, "Error al crear la reserva", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    private void updateExistingReservation(ReservationsViewModel viewModel, String plazaId) {
-        // Formatear fecha para la API
-        SimpleDateFormat apiDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        String formattedDate = apiDateFormat.format(selectedDate.getTime());
-
-        // Calcular tiempos en milisegundos
-        long startTimeMs = startTime.get(Calendar.HOUR_OF_DAY) * 3600000L +
-                startTime.get(Calendar.MINUTE) * 60000L;
-        long endTimeMs = endTime.get(Calendar.HOUR_OF_DAY) * 3600000L +
-                endTime.get(Calendar.MINUTE) * 60000L;
-
-        // Actualizar la reserva
-        viewModel.updateReservation(reservationId, formattedDate, startTimeMs, endTimeMs, selectedType, plazaId)
-                .observe(this, success -> {
-                    if (success != null && success) {
-                        Toast.makeText(this, "Reserva actualizada correctamente", Toast.LENGTH_SHORT).show();
-                        finish();
-                    } else {
-                        Toast.makeText(this, "Error al actualizar la reserva", Toast.LENGTH_SHORT).show();
-                    }
-                });
+    private void updateExistingReservation(Reserva reserva) {
+        viewModel.updateReservation(reserva).observe(this, result -> {
+            if (result != null && result) {
+                Toast.makeText(this, "Reserva actualizada correctamente", Toast.LENGTH_SHORT).show();
+                finish();
+            } else {
+                Toast.makeText(this, "Error al actualizar la reserva", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

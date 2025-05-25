@@ -97,13 +97,11 @@ public class DataRepository {
         dataSource.deleteReservation(reservationId, callback);
     }
 
-    public void updateReservation(String reservationId, String date, long startTime, long endTime,
-                                  String reservationType, String plazaId, DataCallback<Boolean> callback) {
-        dataSource.updateReservation(reservationId, date, startTime, endTime, reservationType, plazaId, callback);
+    public void updateReservation(Reserva reserva, DataCallback<Boolean> callback) {
+        dataSource.updateReservation(reserva, callback);
     }
 
-    public void checkAvailability(String date, long startTimeMs, long endTimeMs,
-                                  String type, String plazaId, DataCallback<Boolean> callback) {
-        dataSource.checkAvailability(date, startTimeMs, endTimeMs, type, plazaId, callback);
+    public void checkAvailability(Reserva reserva, DataCallback<Boolean> callback) {
+        dataSource.checkAvailability(reserva, callback);
     }
 }

@@ -76,50 +76,34 @@ public class LocalDataSource implements DataSource {
     }
 
     private void initReservations() {
-        // Obtener fecha y hora actual para hacer pruebas dinámicas
-        Date now = new Date();
+        String today = DateUtils.getCurrentDateForApi();
+
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(now);
-
-        // Formatear la fecha actual para usarla en las reservas
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String today = dateFormat.format(now);
-
-        // Calcular fecha de mañana
         calendar.add(Calendar.DAY_OF_MONTH, 1);
-        String tomorrow = dateFormat.format(calendar.getTime());
+        String tomorrow = DateUtils.formatDateForApi(calendar);
 
-        // Calcular hora actual en milisegundos desde medianoche
-        calendar.setTime(now);
-        int horaActual = calendar.get(Calendar.HOUR_OF_DAY);
-        int minutoActual = calendar.get(Calendar.MINUTE);
-        long currentTimeMs = horaActual * 3600000L + minutoActual * 60000L;
+        long currentTimeMs = DateUtils.getCurrentTimeMs();
 
-        // Crear hora para reserva actual (desde ahora hasta 1 hora después)
         Hora horaReservaActual = new Hora(currentTimeMs, currentTimeMs + 3600000);
 
-        // Crear hora para reserva de mañana (8:00 - 9:00)
         Hora horaReservaMañana = new Hora(8 * 3600000, 9 * 3600000);
 
-        // Admin reservations
+        // Create sample reservations for the admin user
         List<Reserva> adminReservas = new ArrayList<>();
 
-        // Reserva ACTUAL del admin (en curso ahora mismo)
         Reserva r1 = new Reserva(today, ADMINEMAIL,
                 UUID.randomUUID().toString(), plazas.get(0), horaReservaActual);
         adminReservas.add(r1);
         todasReservas.add(r1);
 
-        // Reserva PRÓXIMA del admin (para mañana)
         Reserva r2 = new Reserva(tomorrow, ADMINEMAIL,
                 UUID.randomUUID().toString(), plazas.get(1), horaReservaMañana);
         adminReservas.add(r2);
         todasReservas.add(r2);
 
-        // Algunas reservas históricas
-        calendar.setTime(now);
+        calendar = Calendar.getInstance();
         calendar.add(Calendar.DAY_OF_MONTH, -1);
-        String yesterday = dateFormat.format(calendar.getTime());
+        String yesterday = DateUtils.formatDateForApi(calendar);
 
         Reserva r3 = new Reserva(yesterday, ADMINEMAIL,
                 UUID.randomUUID().toString(), plazas.get(2), horas.get(0));
@@ -133,16 +117,14 @@ public class LocalDataSource implements DataSource {
 
         reservasPorUsuario.put(ADMINEMAIL, adminReservas);
 
-        // User reservations
+        // Create sample reservations for a regular user
         List<Reserva> userReservas = new ArrayList<>();
 
-        // Reserva actual para usuario normal
         Reserva r8 = new Reserva(today, USEREMAIL,
                 UUID.randomUUID().toString(), plazas.get(5), horaReservaActual);
         userReservas.add(r8);
         todasReservas.add(r8);
 
-        // Reserva próxima para usuario normal
         Reserva r9 = new Reserva(tomorrow, USEREMAIL,
                 UUID.randomUUID().toString(), plazas.get(6), horaReservaMañana);
         userReservas.add(r9);
@@ -187,31 +169,17 @@ public class LocalDataSource implements DataSource {
     public void getHistoricReservations(String userId, DataCallback<List<Reserva>> callback) {
         try {
             List<Reserva> userReservations = reservasPorUsuario.get(userId);
-            if (userReservations != null) {
-                List<Reserva> historicReservations = new ArrayList<>();
+            List<Reserva> historicReservations = new ArrayList<>();
 
-                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                String currentDateStr = dateFormat.format(new Date());
-
-                Calendar calendar = Calendar.getInstance();
-                int horaActual = calendar.get(Calendar.HOUR_OF_DAY);
-                int minutoActual = calendar.get(Calendar.MINUTE);
-                long currentTimeMs = horaActual * 3600000L + minutoActual * 60000L;
-
+            if (userReservations != null && !userReservations.isEmpty()) {
                 for (Reserva reserva : userReservations) {
-                    if (reserva.getFecha().compareTo(currentDateStr) < 0) {
-                        historicReservations.add(reserva);
-                    }
-                    else if (reserva.getFecha().equals(currentDateStr) &&
-                            reserva.getHora().getHoraFin() < currentTimeMs) {
+                    if (DateUtils.isHistoricReservation(reserva)) {
                         historicReservations.add(reserva);
                     }
                 }
-
-                callback.onSuccess(historicReservations);
-            } else {
-                callback.onSuccess(new ArrayList<>());
             }
+
+            callback.onSuccess(historicReservations);
         } catch (Exception e) {
             System.out.println("Error al obtener reservas históricas: " + e.getMessage());
             callback.onFailure(e);
@@ -226,39 +194,14 @@ public class LocalDataSource implements DataSource {
             return;
         }
 
-        // Obtener la fecha y hora actual
-        Date now = new Date();
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(now);
-
-        // Obtener fecha actual en formato "yyyy-MM-dd"
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String currentDate = dateFormat.format(now);
-
-        // Obtener hora actual en milisegundos desde medianoche
-        int horaActual = cal.get(Calendar.HOUR_OF_DAY);
-        int minutoActual = cal.get(Calendar.MINUTE);
-        long currentTimeMs = horaActual * 3600000L + minutoActual * 60000L;
-
-        // Inicializar reserva actual
         Reserva currentReservation = null;
 
-        // Recorrer todas las reservas del usuario
         for (Reserva reserva : userReservations) {
-            // Verificar si es del día actual
-            if (reserva.getFecha().equals(currentDate)) {
-                // Verificar si la hora actual está dentro del rango de la reserva
-                if (currentTimeMs >= reserva.getHora().getHoraInicio() &&
-                        currentTimeMs <= reserva.getHora().getHoraFin()) {
-                    currentReservation = reserva;
-                    break;
-                }
+            if (DateUtils.isOngoingReservation(reserva)) {
+                currentReservation = reserva;
+                break;
             }
         }
-
-        // Imprimir para depuración
-        System.out.println("Reserva actual encontrada: " + (currentReservation != null ?
-                currentReservation.getId() : "ninguna"));
 
         callback.onSuccess(currentReservation);
     }
@@ -271,18 +214,14 @@ public class LocalDataSource implements DataSource {
             return;
         }
 
-        // Obtener la fecha y hora actual
         Date now = new Date();
         Reserva nextReservation = null;
         Date nextDate = null;
 
         for (Reserva reserva : userReservations) {
-            // Convertir fecha y hora de la reserva a Date para comparación
             Date reservaDateTime = DateUtils.getReservaDateTime(reserva);
 
-            // Comprobar si es una reserva futura
             if (reservaDateTime.after(now)) {
-                // Si no hay próxima reserva o esta es más cercana
                 if (nextReservation == null || reservaDateTime.before(nextDate)) {
                     nextReservation = reserva;
                     nextDate = reservaDateTime;
@@ -324,14 +263,12 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
-    public void updateReservation(String reservationId, String date, long startTime, long endTime,
-                                  String reservationType, String plazaId, DataCallback<Boolean> callback) {
+    public void updateReservation(Reserva reserva, DataCallback<Boolean> callback) {
         try {
-            // Buscar la reserva a actualizar
             Reserva reservaToUpdate = null;
-            for (Reserva reserva : todasReservas) {
-                if (reserva.getId().equals(reservationId)) {
-                    reservaToUpdate = reserva;
+            for (Reserva r : todasReservas) {
+                if (r.getId().equals(reserva.getId())) {
+                    reservaToUpdate = r;
                     break;
                 }
             }
@@ -341,38 +278,37 @@ public class LocalDataSource implements DataSource {
                 return;
             }
 
-            // Actualizar fecha
-            reservaToUpdate.setFecha(date);
+            // Actualizar los campos de la reserva
+            reservaToUpdate.setFecha(reserva.getFecha());
+            reservaToUpdate.setHora(reserva.getHora());
 
-            // Crear y actualizar el objeto Hora
-            Hora nuevaHora = new Hora(startTime, endTime);
-            reservaToUpdate.setHora(nuevaHora);
-
-            // Si se especificó una plaza, actualizarla
-            if (plazaId != null && !plazaId.isEmpty()) {
+            // Verificar si la plaza existe en el sistema
+            if (reserva.getPlaza() != null) {
                 Plaza plazaActualizada = null;
+                String plazaId = reserva.getPlaza().getId();
 
-                // Buscar por ID de plaza específico
-                for (Plaza plaza : plazas) {
-                    if (plaza.getId().equals(plazaId)) {
-                        plazaActualizada = plaza;
-                        break;
+                if (plazaId != null && !plazaId.isEmpty()) {
+                    for (Plaza plaza : plazas) {
+                        if (plaza.getId().equals(plazaId)) {
+                            plazaActualizada = plaza;
+                            break;
+                        }
                     }
-                }
 
-                if (plazaActualizada != null) {
-                    reservaToUpdate.setPlaza(plazaActualizada);
+                    if (plazaActualizada != null) {
+                        reservaToUpdate.setPlaza(plazaActualizada);
+                    } else {
+                        callback.onFailure(new Exception("Plaza no encontrada"));
+                        return;
+                    }
                 } else {
-                    callback.onFailure(new Exception("Plaza no encontrada"));
-                    return;
-                }
-            } else if (reservationType != null) {
-                // Si solo se especificó el tipo pero no una plaza específica
-                // buscar una plaza disponible del tipo especificado
-                for (Plaza plaza : plazas) {
-                    if (plaza.getTipo().equals(reservationType)) {
-                        reservaToUpdate.setPlaza(plaza);
-                        break;
+                    // Buscar por tipo si no hay ID específico
+                    String tipo = reserva.getPlaza().getTipo();
+                    for (Plaza plaza : plazas) {
+                        if (plaza.getTipo().equals(tipo)) {
+                            reservaToUpdate.setPlaza(plaza);
+                            break;
+                        }
                     }
                 }
             }
@@ -386,7 +322,6 @@ public class LocalDataSource implements DataSource {
     @Override
     public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
         try {
-            // Verificar si la plaza existe, si se especificó una
             if (reserva.getPlaza() != null && reserva.getPlaza().getId() != null) {
                 boolean plazaExists = false;
                 for (Plaza plaza : plazas) {
@@ -400,7 +335,6 @@ public class LocalDataSource implements DataSource {
                     return;
                 }
             } else {
-                // Buscar una plaza disponible del tipo solicitado
                 Plaza plazaDisponible = null;
                 for (Plaza plaza : plazas) {
                     if (plaza.getTipo().equals(reserva.getPlaza().getTipo())) {
@@ -417,15 +351,12 @@ public class LocalDataSource implements DataSource {
                 reserva.setPlaza(plazaDisponible);
             }
 
-            // Asignar ID si no tiene uno
             if (reserva.getId() == null || reserva.getId().isEmpty()) {
                 reserva.setId(UUID.randomUUID().toString());
             }
 
-            // Agregar la reserva a las colecciones correspondientes
             todasReservas.add(reserva);
 
-            // Agregar a las reservas del usuario
             String userId = reserva.getUsuario();
             List<Reserva> userReservations = reservasPorUsuario.get(userId);
             if (userReservations == null) {
@@ -442,31 +373,30 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
-    public void checkAvailability(String date, long startTimeMs, long endTimeMs,
-                                  String type, String plazaId, DataCallback<Boolean> callback) {
+    public void checkAvailability(Reserva reserva, DataCallback<Boolean> callback) {
         try {
-            // Verificar si hay alguna reserva que se solapa con la fecha, hora y plaza solicitada
+            String fecha = reserva.getFecha();
+            long horaInicio = reserva.getHora().getHoraInicio();
+            long horaFin = reserva.getHora().getHoraFin();
+            String tipo = reserva.getPlaza().getTipo();
+            String plazaId = reserva.getPlaza().getId();
+
             boolean isAvailable = true;
 
-            for (Reserva reserva : todasReservas) {
-                // Verificar si es la misma fecha
-                if (reserva.getFecha().equals(date)) {
-                    // Verificar si hay solapamiento de horarios
-                    long reservaStart = reserva.getHora().getHoraInicio();
-                    long reservaEnd = reserva.getHora().getHoraFin();
+            for (Reserva r : todasReservas) {
+                if (r.getFecha().equals(fecha)) {
+                    long reservaStart = r.getHora().getHoraInicio();
+                    long reservaEnd = r.getHora().getHoraFin();
 
-                    boolean timeOverlap = (startTimeMs < reservaEnd && endTimeMs > reservaStart);
+                    boolean timeOverlap = (horaInicio < reservaEnd && horaFin > reservaStart);
 
-                    // Si es la misma plaza o no se especificó plaza (verificando solo tipo)
                     boolean sameSpot = false;
                     if (plazaId != null && !plazaId.isEmpty()) {
-                        sameSpot = reserva.getPlaza().getId().equals(plazaId);
+                        sameSpot = r.getPlaza().getId().equals(plazaId);
                     } else {
-                        // Si no se especificó plaza, verificar por tipo
-                        sameSpot = reserva.getPlaza().getTipo().equals(type);
+                        sameSpot = r.getPlaza().getTipo().equals(tipo);
                     }
 
-                    // Si hay solapamiento de tiempo y es la misma plaza, no está disponible
                     if (timeOverlap && sameSpot) {
                         isAvailable = false;
                         break;

@@ -13,6 +13,7 @@ import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
 
 import java.util.List;
+import java.util.UUID;
 
 public class ReservationsViewModel extends ViewModel {
 
@@ -31,12 +32,23 @@ public class ReservationsViewModel extends ViewModel {
     public LiveData<List<Reserva>> getReservations() {
         return reservations;
     }
-    public LiveData<List<Reserva>> getHistoricReservations() { return historicReservations;}
-    public LiveData<Reserva> getCurrentReservation() { return currentReservation; }
-    public LiveData<Reserva> getNextReservation() { return nextReservation; }
+
+    public LiveData<List<Reserva>> getHistoricReservations() {
+        return historicReservations;
+    }
+
+    public LiveData<Reserva> getCurrentReservation() {
+        return currentReservation;
+    }
+
+    public LiveData<Reserva> getNextReservation() {
+        return nextReservation;
+    }
+
     public LiveData<Boolean> getIsLoading() {
         return isLoading;
     }
+
     public LiveData<String> getError() {
         return error;
     }
@@ -167,12 +179,14 @@ public class ReservationsViewModel extends ViewModel {
         });
     }
 
+    /**
+     * Elimina una reserva por su ID
+     */
     public void deleteReservation(String reservaId) {
         isLoading.setValue(true);
         repository.deleteReservation(reservaId, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
-                // Recargar las reservas después de eliminar
                 loadUserReservations();
                 isLoading.setValue(false);
             }
@@ -186,23 +200,13 @@ public class ReservationsViewModel extends ViewModel {
     }
 
     /**
-     * Verifica si una plaza está disponible para una fecha y hora específicas
+     * Verifica la disponibilidad de una reserva utilizando el objeto Reserva directamente
      */
-    public LiveData<Boolean> checkReservationAvailability(String date, long startTimeMs,
-                                                          long endTimeMs, String type, String plazaId) {
+    public LiveData<Boolean> checkReservationAvailability(Reserva reserva) {
         MutableLiveData<Boolean> result = new MutableLiveData<>();
         isLoading.setValue(true);
 
-        // Implementación temporal - en un escenario real esto verificaría contra la base de datos
-        // si hay alguna reserva que se solape con la fecha, hora y plaza solicitada
-
-        // Simular verificación de disponibilidad (siempre disponible por ahora)
-        // En una implementación real, esto consultaría al repositorio
-        result.setValue(true);
-        isLoading.setValue(false);
-
-    repository.checkAvailability(date, startTimeMs, endTimeMs, type, plazaId,
-        new DataCallback<Boolean>() {
+        repository.checkAvailability(reserva, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean available) {
                 result.setValue(available);
@@ -221,10 +225,21 @@ public class ReservationsViewModel extends ViewModel {
     }
 
     /**
-     * Crea una nueva reserva con los datos proporcionados
+     * Metodo de compatibilidad para verificar disponibilidad usando parámetros individuales
      */
-    public LiveData<Boolean> createReservation(String date, long startTimeMs,
-                                               long endTimeMs, String type, String plazaId) {
+    public LiveData<Boolean> checkReservationAvailability(String date, long startTimeMs,
+                                                          long endTimeMs, String type, String plazaId) {
+        Hora hora = new Hora(startTimeMs, endTimeMs);
+        Plaza plaza = new Plaza(plazaId, type);
+        Reserva reserva = new Reserva(date, "", "", plaza, hora);
+
+        return checkReservationAvailability(reserva);
+    }
+
+    /**
+     * Crea una nueva reserva usando el objeto Reserva directamente
+     */
+    public LiveData<Boolean> createReservation(Reserva reserva) {
         MutableLiveData<Boolean> result = new MutableLiveData<>();
         isLoading.setValue(true);
 
@@ -236,26 +251,20 @@ public class ReservationsViewModel extends ViewModel {
             return result;
         }
 
-        String userId = currentUser.getEmail();
-        String reservationId = java.util.UUID.randomUUID().toString();
+        // Asignar el usuario actual a la reserva
+        reserva.setUsuario(currentUser.getEmail());
 
-        // Crear objeto Hora
-        Hora hora = new Hora(startTimeMs, endTimeMs);
+        // Generar ID si no tiene
+        if (reserva.getId() == null || reserva.getId().isEmpty()) {
+            reserva.setId(UUID.randomUUID().toString());
+        }
 
-        // Crear objeto Plaza con el tipo seleccionado
-        Plaza plaza = new Plaza(plazaId, type);
-
-        // Crear objeto Reserva
-        Reserva reserva = new Reserva(date, userId, reservationId, plaza, hora);
-
-        // Llamar al repositorio para guardar la reserva
         repository.createReservation(reserva, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean success) {
                 result.postValue(success);
-                isLoading.postValue(false);
-                // Recargar las reservas después de crear una nueva
                 loadUserReservations();
+                isLoading.postValue(false);
             }
 
             @Override
@@ -270,32 +279,63 @@ public class ReservationsViewModel extends ViewModel {
     }
 
     /**
-     * Actualiza una reserva existente
+     * Metodo de compatibilidad para crear reserva usando parámetros individuales
+     */
+    public LiveData<Boolean> createReservation(String date, long startTimeMs,
+                                               long endTimeMs, String type, String plazaId) {
+        User currentUser = repository.getCurrentUser();
+        String userId = (currentUser != null) ? currentUser.getEmail() : "";
+
+        Hora hora = new Hora(startTimeMs, endTimeMs);
+        Plaza plaza = new Plaza(plazaId, type);
+        Reserva reserva = new Reserva(date, userId, "", plaza, hora);
+
+        return createReservation(reserva);
+    }
+
+    /**
+     * Actualiza una reserva existente usando el objeto Reserva directamente
+     */
+    public LiveData<Boolean> updateReservation(Reserva reserva) {
+        MutableLiveData<Boolean> result = new MutableLiveData<>();
+        isLoading.setValue(true);
+
+        if (reserva.getId() == null || reserva.getId().isEmpty()) {
+            error.setValue("ID de reserva no válido");
+            result.setValue(false);
+            isLoading.setValue(false);
+            return result;
+        }
+
+        repository.updateReservation(reserva, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean updateResult) {
+                result.setValue(updateResult);
+                loadUserReservations();
+                isLoading.setValue(false);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                error.setValue("Error al actualizar la reserva: " + e.getMessage());
+                result.setValue(false);
+                isLoading.setValue(false);
+            }
+        });
+
+        return result;
+    }
+
+    /**
+     * Metodo de compatibilidad para actualizar reserva usando parámetros individuales
      */
     public LiveData<Boolean> updateReservation(String reservationId, String date,
                                                long startTimeMs, long endTimeMs,
                                                String reservationType, String plazaId) {
-        MutableLiveData<Boolean> result = new MutableLiveData<>();
-        isLoading.setValue(true);
+        Hora hora = new Hora(startTimeMs, endTimeMs);
+        Plaza plaza = new Plaza(plazaId, reservationType);
+        Reserva reserva = new Reserva(date, "", reservationId, plaza, hora);
 
-        repository.updateReservation(reservationId, date, startTimeMs, endTimeMs,
-                reservationType, plazaId, new DataCallback<Boolean>() {
-                    @Override
-                    public void onSuccess(Boolean updateResult) {
-                        result.setValue(updateResult);
-                        // Recargar las reservas después de actualizar
-                        loadUserReservations();
-                        isLoading.setValue(false);
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        error.setValue("Error al actualizar la reserva: " + e.getMessage());
-                        result.setValue(false);
-                        isLoading.setValue(false);
-                    }
-                });
-
-        return result;
+        return updateReservation(reserva);
     }
 }

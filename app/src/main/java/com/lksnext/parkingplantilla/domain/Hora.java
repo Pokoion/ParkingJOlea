@@ -1,8 +1,6 @@
 package com.lksnext.parkingplantilla.domain;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+import com.lksnext.parkingplantilla.utils.DateUtils;
 
 import androidx.annotation.NonNull;
 
@@ -39,9 +37,6 @@ public class Hora {
     @NonNull
     @Override
     public String toString() {
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-        Date startDate = new Date(horaInicio);
-        Date endDate = new Date(horaFin);
-        return sdf.format(startDate) + " - " + sdf.format(endDate);
+        return DateUtils.formatTimeFromMs(horaInicio) + " - " + DateUtils.formatTimeFromMs(horaFin);
     }
 }
