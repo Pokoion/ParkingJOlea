@@ -104,4 +104,8 @@ public class DataRepository {
     public void checkAvailability(Reserva reserva, DataCallback<Boolean> callback) {
         dataSource.checkAvailability(reserva, callback);
     }
+
+    public void hasReservationOnDate(String userId, String date, DataCallback<Boolean> callback){
+        dataSource.hasReservationOnDate(userId, date, callback);
+    }
 }

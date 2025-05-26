@@ -422,4 +422,28 @@ public class LocalDataSource implements DataSource {
             callback.onFailure(e);
         }
     }
+
+    @Override
+    public void hasReservationOnDate(String userId, String date, DataCallback<Boolean> callback) {
+        try {
+            List<Reserva> userReservations = reservasPorUsuario.get(userId);
+            if (userReservations == null || userReservations.isEmpty()) {
+                callback.onSuccess(false);
+                return;
+            }
+
+            boolean hasReservation = false;
+            for (Reserva reserva : userReservations) {
+                if (reserva.getFecha().equals(date)) {
+                    hasReservation = true;
+                    break;
+                }
+            }
+
+            callback.onSuccess(hasReservation);
+        } catch (Exception e) {
+            callback.onFailure(e);
+        }
+    }
+
 }

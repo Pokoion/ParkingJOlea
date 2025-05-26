@@ -207,6 +207,13 @@
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_input"
                         android:padding="12dp" />
+
+                    <ProgressBar
+                        android:id="@+id/loadingIndicator"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="8dp"
+                        android:visibility="gone"/>
                 </LinearLayout>
             </LinearLayout>
 

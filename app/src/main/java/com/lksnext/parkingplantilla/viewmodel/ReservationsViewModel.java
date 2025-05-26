@@ -1,7 +1,5 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
-import android.util.Log;
-
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -13,9 +11,11 @@ import com.lksnext.parkingplantilla.domain.Reserva;
 import com.lksnext.parkingplantilla.domain.User;
 import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
+import com.lksnext.parkingplantilla.utils.DateUtils;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.ArrayList;
 
 public class ReservationsViewModel extends ViewModel {
 
@@ -280,21 +280,6 @@ public class ReservationsViewModel extends ViewModel {
     }
 
     /**
-     * Metodo de compatibilidad para crear reserva usando parámetros individuales
-     */
-    public LiveData<Boolean> createReservation(String date, long startTimeMs,
-                                               long endTimeMs, String type, String plazaId) {
-        User currentUser = repository.getCurrentUser();
-        String userId = (currentUser != null) ? currentUser.getEmail() : "";
-
-        Hora hora = new Hora(startTimeMs, endTimeMs);
-        Plaza plaza = new Plaza(plazaId, type);
-        Reserva reserva = new Reserva(date, userId, "", plaza, hora);
-
-        return createReservation(reserva);
-    }
-
-    /**
      * Actualiza una reserva existente usando el objeto Reserva directamente
      */
     public LiveData<Boolean> updateReservation(Reserva reserva) {
@@ -327,16 +312,61 @@ public class ReservationsViewModel extends ViewModel {
         return result;
     }
 
-    /**
-     * Metodo de compatibilidad para actualizar reserva usando parámetros individuales
-     */
-    public LiveData<Boolean> updateReservation(String reservationId, String date,
-                                               long startTimeMs, long endTimeMs,
-                                               String reservationType, String plazaId) {
-        Hora hora = new Hora(startTimeMs, endTimeMs);
-        Plaza plaza = new Plaza(plazaId, reservationType);
-        Reserva reserva = new Reserva(date, "", reservationId, plaza, hora);
+    public LiveData<Boolean> checkUserHasReservationOnDate(String date) {
+        MutableLiveData<Boolean> result = new MutableLiveData<>();
+        User currentUser = repository.getCurrentUser();
 
-        return updateReservation(reserva);
+        if (currentUser == null) {
+            result.setValue(false);
+            return result;
+        }
+
+        repository.hasReservationOnDate(currentUser.getEmail(), date, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean hasReservation) {
+                result.postValue(hasReservation);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                error.postValue("Error al verificar reservas: " + e.getMessage());
+                result.postValue(false);
+            }
+        });
+
+        return result;
     }
+
+    public LiveData<List<String>> getUserReservationDates() {
+        MutableLiveData<List<String>> reservedDates = new MutableLiveData<>();
+        List<String> dates = new ArrayList<>();
+
+        User currentUser = repository.getCurrentUser();
+        if (currentUser == null) {
+            reservedDates.setValue(dates);
+            return reservedDates;
+        }
+
+        repository.getReservations(currentUser.getEmail(), new DataCallback<List<Reserva>>() {
+            @Override
+            public void onSuccess(List<Reserva> result) {
+                for (Reserva reserva : result) {
+                    // Solo considerar reservas futuras o actuales
+                    if (!DateUtils.isHistoricReservation(reserva)) {
+                        dates.add(reserva.getFecha());
+                    }
+                }
+                reservedDates.postValue(dates);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                error.postValue("Error al cargar fechas de reservas: " + e.getMessage());
+                reservedDates.postValue(new ArrayList<>());
+            }
+        });
+
+        return reservedDates;
+    }
+
 }
