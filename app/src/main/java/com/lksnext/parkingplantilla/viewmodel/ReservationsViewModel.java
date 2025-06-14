@@ -219,7 +219,9 @@ public class ReservationsViewModel extends ViewModel {
         repository.deleteReservation(reservaId, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
+                // Recargar ambas listas para reflejar el cambio en ambos fragmentos
                 loadUserReservations();
+                loadHistoricReservations();
                 isLoading.setValue(false);
             }
 

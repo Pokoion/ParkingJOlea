@@ -75,4 +75,10 @@ public class Reserva {
         this.estado = estado;
     }
 
+    public String getEstadoString() {
+        if (estado == null) return "";
+        String name = estado.name().toLowerCase();
+        return name.substring(0, 1).toUpperCase() + name.substring(1);
+    }
+
 }

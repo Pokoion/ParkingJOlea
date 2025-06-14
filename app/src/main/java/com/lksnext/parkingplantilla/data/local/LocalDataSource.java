@@ -130,6 +130,36 @@ public class LocalDataSource implements DataSource {
         adminReservas.add(r4);
         todasReservas.add(r4);
 
+        // Reservas FINALIZADA (últimos 30 días)
+        Calendar calFinalizada = Calendar.getInstance();
+        calFinalizada.add(Calendar.DAY_OF_MONTH, -5); // hace 5 días
+        String fechaFinalizada = DateUtils.formatDateForApi(calFinalizada);
+        Reserva rFinalizada = new Reserva(fechaFinalizada, ADMINEMAIL,
+                UUID.randomUUID().toString(), plazas.get(4), horas.get(1));
+        rFinalizada.setEstado(Reserva.Estado.FINALIZADA);
+        adminReservas.add(rFinalizada);
+        todasReservas.add(rFinalizada);
+
+        // Reservas CANCELADA (futuro)
+        Calendar calCanceladaFuturo = Calendar.getInstance();
+        calCanceladaFuturo.add(Calendar.DAY_OF_MONTH, 3); // dentro de 3 días
+        String fechaCanceladaFuturo = DateUtils.formatDateForApi(calCanceladaFuturo);
+        Reserva rCanceladaFuturo = new Reserva(fechaCanceladaFuturo, ADMINEMAIL,
+                UUID.randomUUID().toString(), plazas.get(5), horas.get(2));
+        rCanceladaFuturo.setEstado(Reserva.Estado.CANCELADA);
+        adminReservas.add(rCanceladaFuturo);
+        todasReservas.add(rCanceladaFuturo);
+
+        // Reservas CANCELADA (últimos 30 días)
+        Calendar calCanceladaPasada = Calendar.getInstance();
+        calCanceladaPasada.add(Calendar.DAY_OF_MONTH, -10); // hace 10 días
+        String fechaCanceladaPasada = DateUtils.formatDateForApi(calCanceladaPasada);
+        Reserva rCanceladaPasada = new Reserva(fechaCanceladaPasada, ADMINEMAIL,
+                UUID.randomUUID().toString(), plazas.get(6), horas.get(3));
+        rCanceladaPasada.setEstado(Reserva.Estado.CANCELADA);
+        adminReservas.add(rCanceladaPasada);
+        todasReservas.add(rCanceladaPasada);
+
         reservasPorUsuario.put(ADMINEMAIL, adminReservas);
 
         // Create sample reservations for a regular user
@@ -173,31 +203,31 @@ public class LocalDataSource implements DataSource {
     @Override
     public void getReservations(String userId, DataCallback<List<Reserva>> callback) {
         List<Reserva> userReservations = reservasPorUsuario.get(userId);
+        List<Reserva> result = new ArrayList<>();
         if (userReservations != null) {
-            callback.onSuccess(new ArrayList<>(userReservations));
-        } else {
-            callback.onSuccess(new ArrayList<>());
+            for (Reserva reserva : userReservations) {
+                if (reserva.getEstado() == Reserva.Estado.ACTIVA) {
+                    result.add(reserva);
+                }
+            }
         }
+        callback.onSuccess(result);
     }
 
     @Override
     public void getHistoricReservations(String userId, DataCallback<List<Reserva>> callback) {
-        try {
-            List<Reserva> userReservations = reservasPorUsuario.get(userId);
-            List<Reserva> historicReservations = new ArrayList<>();
-
-            if (userReservations != null && !userReservations.isEmpty()) {
-                for (Reserva reserva : userReservations) {
-                    if (DateUtils.isHistoricReservation(reserva)) {
-                        historicReservations.add(reserva);
-                    }
+        List<Reserva> userReservations = reservasPorUsuario.get(userId);
+        List<Reserva> historicReservations = new ArrayList<>();
+        if (userReservations != null && !userReservations.isEmpty()) {
+            for (Reserva reserva : userReservations) {
+                if (reserva.getEstado() == Reserva.Estado.FINALIZADA && DateUtils.isWithinLast30Days(reserva, false)) {
+                    historicReservations.add(reserva);
+                } else if (reserva.getEstado() == Reserva.Estado.CANCELADA && DateUtils.isWithinLast30Days(reserva, true)) {
+                    historicReservations.add(reserva);
                 }
             }
-
-            callback.onSuccess(historicReservations);
-        } catch (Exception e) {
-            callback.onFailure(e);
         }
+        callback.onSuccess(historicReservations);
     }
 
     @Override
@@ -262,7 +292,6 @@ public class LocalDataSource implements DataSource {
                 return;
             }
 
-            // Cambia el estado a CANCELADA en vez de eliminar
             reservaToDelete.setEstado(Reserva.Estado.CANCELADA);
 
             String userId = reservaToDelete.getUsuario();
@@ -282,6 +311,12 @@ public class LocalDataSource implements DataSource {
         }
     }
 
+    /**
+     * Actualiza el estado de las reservas ACTIVAS a FINALIZADA si ya ha pasado su hora de fin.
+     *
+     * NOTA: En entorno de producción (Firebase o backend), esta lógica debe implementarse en el servidor
+     * para que el estado se actualice aunque la app esté cerrada. Aquí solo se usa para entorno local/demo.
+     */
     private void actualizarEstadosFinalizadas() {
         long ahora = System.currentTimeMillis();
         for (Reserva r : todasReservas) {

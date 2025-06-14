@@ -82,7 +82,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:layout_marginEnd="16dp"
-                android:text="completed"
+                android:text="@{reserva.estadoString}"
                 android:textSize="12sp"
                 android:textStyle="italic"
                 app:layout_constraintEnd_toEndOf="parent"

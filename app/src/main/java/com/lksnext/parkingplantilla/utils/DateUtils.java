@@ -257,4 +257,24 @@ public class DateUtils {
             return "Quedan " + minutes + "min";
         }
     }
+
+    /**
+     * Indica si una reserva está dentro de los últimos 30 días (para FINALIZADA) o es posterior/últimos 30 días (para CANCELADA)
+     * @param reserva Reserva a comprobar
+     * @param cancelled true si es para CANCELADA, false para FINALIZADA
+     * @return true si cumple el criterio
+     */
+    public static boolean isWithinLast30Days(Reserva reserva, boolean cancelled) {
+        Date now = new Date();
+        Date hace30dias = new Date(now.getTime() - 30L * 24 * 60 * 60 * 1000);
+        if (cancelled) {
+            // CANCELADA: fecha de inicio posterior a hoy o dentro de los últimos 30 días
+            Date start = getReservaDateTime(reserva);
+            return start.after(now) || !start.before(hace30dias);
+        } else {
+            // FINALIZADA: fecha de fin dentro de los últimos 30 días
+            Date end = getReservaEndTime(reserva);
+            return !end.before(hace30dias) && end.before(now);
+        }
+    }
 }
