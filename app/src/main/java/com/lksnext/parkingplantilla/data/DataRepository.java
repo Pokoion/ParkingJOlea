@@ -108,4 +108,18 @@ public class DataRepository {
     public void hasReservationOnDate(String userId, String date, DataCallback<Boolean> callback){
         dataSource.hasReservationOnDate(userId, date, callback);
     }
+
+    // Plazas
+    public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
+        dataSource.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, callback);
+    }
+
+    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<String> callback) {
+        dataSource.assignRandomPlaza(tipo, fecha, horaInicio, horaFin, callback);
+    }
+
+    // Números disponibles en una fila concreta
+    public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
+        dataSource.getAvailableNumbers(tipo, row, fecha, horaInicio, horaFin, callback);
+    }
 }

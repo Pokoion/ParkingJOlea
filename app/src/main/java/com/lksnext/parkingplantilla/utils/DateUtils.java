@@ -16,34 +16,49 @@ public class DateUtils {
     private static final String DATETIME_FORMAT = "yyyy-MM-dd HH:mm";
 
     /**
-     * Obtiene un objeto Date con la fecha y hora de inicio de la reserva
+     * Obtiene un objeto Date con la fecha y hora de inicio de la reserva (formato API + ms desde medianoche)
+     * Siempre usa la fecha en formato yyyy-MM-dd y la hora en ms desde medianoche (UTC).
      */
     public static Date getReservaDateTime(Reserva reserva) {
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat(DATETIME_FORMAT);
-            Date horaInicio = new Date(reserva.getHora().getHoraInicio());
-            SimpleDateFormat timeFormat = new SimpleDateFormat(TIME_FORMAT);
-            String timeStr = timeFormat.format(horaInicio);
-            return sdf.parse(reserva.getFecha() + " " + timeStr);
-        } catch (ParseException e) {
+            // Parse fecha en formato API (yyyy-MM-dd)
+            SimpleDateFormat apiDateFormat = new SimpleDateFormat(API_DATE_FORMAT, Locale.getDefault());
+            apiDateFormat.setLenient(false);
+            Date fecha = apiDateFormat.parse(reserva.getFecha());
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(fecha);
+            // Añadir ms desde medianoche (hora de inicio)
+            long msInicio = reserva.getHora().getHoraInicio();
+            cal.set(Calendar.HOUR_OF_DAY, (int) (msInicio / 3600000));
+            cal.set(Calendar.MINUTE, (int) ((msInicio % 3600000) / 60000));
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            return cal.getTime();
+        } catch (Exception e) {
             e.printStackTrace();
             return new Date(); // Fallback a fecha actual
         }
     }
 
     /**
-     * Obtiene un objeto Date con la fecha y hora de fin de la reserva
+     * Obtiene un objeto Date con la fecha y hora de fin de la reserva (formato API + ms desde medianoche)
+     * Siempre usa la fecha en formato yyyy-MM-dd y la hora en ms desde medianoche (UTC).
      */
     public static Date getReservaEndTime(Reserva reserva) {
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat(DATETIME_FORMAT);
-            Date horaFin = new Date(reserva.getHora().getHoraFin());
-            SimpleDateFormat timeFormat = new SimpleDateFormat(TIME_FORMAT);
-            String timeStr = timeFormat.format(horaFin);
-            return sdf.parse(reserva.getFecha() + " " + timeStr);
-        } catch (ParseException e) {
+            SimpleDateFormat apiDateFormat = new SimpleDateFormat(API_DATE_FORMAT, Locale.getDefault());
+            apiDateFormat.setLenient(false);
+            Date fecha = apiDateFormat.parse(reserva.getFecha());
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(fecha);
+            long msFin = reserva.getHora().getHoraFin();
+            cal.set(Calendar.HOUR_OF_DAY, (int) (msFin / 3600000));
+            cal.set(Calendar.MINUTE, (int) ((msFin % 3600000) / 60000));
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            return cal.getTime();
+        } catch (Exception e) {
             e.printStackTrace();
-            // Fallback: 2 horas después de la hora actual
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.HOUR, 2);
             return calendar.getTime();
@@ -60,13 +75,13 @@ public class DateUtils {
     }
 
     /**
-     * Verifica si una reserva está actualmente en curso
+     * Verifica si una reserva está actualmente en curso (incluye el instante exacto de inicio)
      */
     public static boolean isOngoingReservation(Reserva reserva) {
         Date now = new Date();
         Date startTime = getReservaDateTime(reserva);
         Date endTime = getReservaEndTime(reserva);
-        return now.after(startTime) && now.before(endTime);
+        return !now.before(startTime) && now.before(endTime);
     }
 
     /**
@@ -79,12 +94,12 @@ public class DateUtils {
     }
 
     /**
-     * Formatea la fecha de una reserva para mostrar en la UI
+     * Formatea la fecha de una reserva para mostrar en la UI (dd-MM-yyyy)
      */
     public static String formatReservaDate(Reserva reserva) {
         try {
-            SimpleDateFormat inputFormat = new SimpleDateFormat(API_DATE_FORMAT);
-            SimpleDateFormat outputFormat = new SimpleDateFormat(UI_DATE_FORMAT);
+            SimpleDateFormat inputFormat = new SimpleDateFormat(API_DATE_FORMAT, Locale.getDefault());
+            SimpleDateFormat outputFormat = new SimpleDateFormat(UI_DATE_FORMAT, Locale.getDefault());
             Date date = inputFormat.parse(reserva.getFecha());
             return outputFormat.format(date);
         } catch (ParseException e) {
@@ -94,13 +109,20 @@ public class DateUtils {
     }
 
     /**
-     * Formatea la hora de una reserva para mostrar en la UI
+     * Formatea la hora de una reserva para mostrar en la UI (HH:mm - HH:mm)
      */
     public static String formatReservaTime(Reserva reserva) {
-        SimpleDateFormat timeFormat = new SimpleDateFormat(TIME_FORMAT);
-        Date startTime = new Date(reserva.getHora().getHoraInicio());
-        Date endTime = new Date(reserva.getHora().getHoraFin());
-        return timeFormat.format(startTime) + " - " + timeFormat.format(endTime);
+        SimpleDateFormat timeFormat = new SimpleDateFormat(TIME_FORMAT, Locale.getDefault());
+        // Usar Calendar para evitar problemas de zona horaria
+        Calendar calInicio = Calendar.getInstance();
+        calInicio.setTimeInMillis(0);
+        calInicio.set(Calendar.HOUR_OF_DAY, (int) (reserva.getHora().getHoraInicio() / 3600000));
+        calInicio.set(Calendar.MINUTE, (int) ((reserva.getHora().getHoraInicio() % 3600000) / 60000));
+        Calendar calFin = Calendar.getInstance();
+        calFin.setTimeInMillis(0);
+        calFin.set(Calendar.HOUR_OF_DAY, (int) (reserva.getHora().getHoraFin() / 3600000));
+        calFin.set(Calendar.MINUTE, (int) ((reserva.getHora().getHoraFin() % 3600000) / 60000));
+        return timeFormat.format(calInicio.getTime()) + " - " + timeFormat.format(calFin.getTime());
     }
 
     /**
@@ -188,6 +210,51 @@ public class DateUtils {
         } catch (ParseException e) {
             e.printStackTrace();
             return uiDate;
+        }
+    }
+
+    /**
+     * Devuelve un texto amigable con el tiempo restante hasta la reserva ("En 2 días", "En 3 horas", etc.)
+     */
+    public static String getTimeUntilText(Reserva reserva) {
+        Date now = new Date();
+        Date reservaDate = getReservaDateTime(reserva);
+        long diffMs = reservaDate.getTime() - now.getTime();
+        if (diffMs <= 0) {
+            return "Ya ha comenzado";
+        }
+        long diffSeconds = diffMs / 1000;
+        long diffMinutes = diffSeconds / 60;
+        long diffHours = diffMinutes / 60;
+        long diffDays = diffHours / 24;
+        if (diffDays > 0) {
+            return "En " + diffDays + (diffDays == 1 ? " día" : " días");
+        } else if (diffHours > 0) {
+            return "En " + diffHours + (diffHours == 1 ? " hora" : " horas");
+        } else if (diffMinutes > 0) {
+            return "En " + diffMinutes + (diffMinutes == 1 ? " minuto" : " minutos");
+        } else {
+            return "En unos segundos";
+        }
+    }
+
+    /**
+     * Devuelve un texto amigable con el tiempo restante hasta que finalice la reserva en curso ("Quedan 1h 30min", etc.)
+     */
+    public static String getTimeRemainingText(Reserva reserva) {
+        Date now = new Date();
+        Date end = getReservaEndTime(reserva);
+        long diffMs = end.getTime() - now.getTime();
+        if (diffMs <= 0) {
+            return "Finalizada";
+        }
+        long diffMinutes = diffMs / 60000;
+        long hours = diffMinutes / 60;
+        long minutes = diffMinutes % 60;
+        if (hours > 0) {
+            return "Quedan " + hours + "h " + minutes + "min";
+        } else {
+            return "Quedan " + minutes + "min";
         }
     }
 }

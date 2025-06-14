@@ -27,6 +27,13 @@ public class ReservationsViewModel extends ViewModel {
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
 
+    // NUEVO: LiveData para plazas disponibles y plaza random asignada
+    private final MutableLiveData<List<String>> availablePlazas = new MutableLiveData<>();
+    private final MutableLiveData<String> randomPlaza = new MutableLiveData<>();
+
+    // NUEVO: LiveData para números de plaza disponibles en una fila concreta
+    private final MutableLiveData<List<String>> availableNumbers = new MutableLiveData<>();
+
     public ReservationsViewModel() {
         repository = ParkingApplication.getRepository();
     }
@@ -55,22 +62,39 @@ public class ReservationsViewModel extends ViewModel {
         return error;
     }
 
+    public LiveData<List<String>> getAvailablePlazas() {
+        return availablePlazas;
+    }
+
+    public LiveData<String> getRandomPlaza() {
+        return randomPlaza;
+    }
+
+    public LiveData<List<String>> getAvailableNumbers() {
+        return availableNumbers;
+    }
+
     /**
-     * Carga la reserva actual del usuario
+     * Carga la reserva actual del usuario (solo la que está en curso)
      */
     public void loadCurrentReservation() {
         User currentUser = repository.getCurrentUser();
         if (currentUser != null) {
             isLoading.setValue(true);
             String userId = currentUser.getEmail();
-
-            repository.getCurrentReservation(userId, new DataCallback<Reserva>() {
+            repository.getReservations(userId, new DataCallback<List<Reserva>>() {
                 @Override
-                public void onSuccess(Reserva result) {
-                    currentReservation.setValue(result);
+                public void onSuccess(List<Reserva> result) {
+                    Reserva current = null;
+                    for (Reserva r : result) {
+                        if (DateUtils.isOngoingReservation(r)) {
+                            current = r;
+                            break;
+                        }
+                    }
+                    currentReservation.setValue(current);
                     isLoading.setValue(false);
                 }
-
                 @Override
                 public void onFailure(Exception e) {
                     error.setValue(e.getMessage());
@@ -85,21 +109,27 @@ public class ReservationsViewModel extends ViewModel {
     }
 
     /**
-     * Carga la próxima reserva del usuario
+     * Carga la próxima reserva del usuario (la primera futura, no en curso)
      */
     public void loadNextReservation() {
         User currentUser = repository.getCurrentUser();
         if (currentUser != null) {
             isLoading.setValue(true);
             String userId = currentUser.getEmail();
-
-            repository.getNextReservation(userId, new DataCallback<Reserva>() {
+            repository.getReservations(userId, new DataCallback<List<Reserva>>() {
                 @Override
-                public void onSuccess(Reserva result) {
-                    nextReservation.setValue(result);
+                public void onSuccess(List<Reserva> result) {
+                    Reserva next = null;
+                    for (Reserva r : result) {
+                        if (DateUtils.isFutureReservation(r)) {
+                            if (next == null || DateUtils.getReservaDateTime(r).before(DateUtils.getReservaDateTime(next))) {
+                                next = r;
+                            }
+                        }
+                    }
+                    nextReservation.setValue(next);
                     isLoading.setValue(false);
                 }
-
                 @Override
                 public void onFailure(Exception e) {
                     error.setValue(e.getMessage());
@@ -369,4 +399,61 @@ public class ReservationsViewModel extends ViewModel {
         return reservedDates;
     }
 
+    // NUEVO: Solicitar plazas disponibles
+    public void loadAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin) {
+        isLoading.setValue(true);
+        repository.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> result) {
+                availablePlazas.postValue(result);
+                isLoading.postValue(false);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                error.postValue("Error al cargar plazas disponibles: " + e.getMessage());
+                availablePlazas.postValue(new ArrayList<>());
+                isLoading.postValue(false);
+            }
+        });
+    }
+
+    // NUEVO: Solicitar plaza random (el backend la asigna y la devuelve)
+    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin) {
+        isLoading.setValue(true);
+        repository.assignRandomPlaza(tipo, fecha, horaInicio, horaFin, new DataCallback<String>() {
+            @Override
+            public void onSuccess(String result) {
+                randomPlaza.postValue(result);
+                isLoading.postValue(false);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                error.postValue("Error al asignar plaza aleatoria: " + e.getMessage());
+                randomPlaza.postValue(null);
+                isLoading.postValue(false);
+            }
+        });
+    }
+
+    // NUEVO: Cargar números disponibles para una fila concreta
+    public void loadAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin) {
+        isLoading.setValue(true);
+        repository.getAvailableNumbers(tipo, row, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> result) {
+                availableNumbers.postValue(result);
+                isLoading.setValue(false);
+            }
+            @Override
+            public void onFailure(Exception e) {
+                error.postValue("Error al cargar números disponibles: " + e.getMessage());
+                availableNumbers.postValue(new ArrayList<>());
+                isLoading.setValue(false);
+            }
+        });
+    }
+
 }
+

@@ -262,165 +262,196 @@ public class LocalDataSource implements DataSource {
                 return;
             }
 
-            todasReservas.remove(reservaToDelete);
+            // Cambia el estado a CANCELADA en vez de eliminar
+            reservaToDelete.setEstado(Reserva.Estado.CANCELADA);
 
             String userId = reservaToDelete.getUsuario();
             List<Reserva> userReservations = reservasPorUsuario.get(userId);
             if (userReservations != null) {
-                userReservations.remove(reservaToDelete);
+                for (Reserva r : userReservations) {
+                    if (r.getId().equals(reservaToDelete.getId())) {
+                        r.setEstado(Reserva.Estado.CANCELADA);
+                        break;
+                    }
+                }
             }
 
             callback.onSuccess(true);
         } catch (Exception e) {
             callback.onFailure(e);
+        }
+    }
+
+    private void actualizarEstadosFinalizadas() {
+        long ahora = System.currentTimeMillis();
+        for (Reserva r : todasReservas) {
+            if (r.getEstado() == Reserva.Estado.ACTIVA && r.getHora() != null) {
+                long fin = r.getHora().getHoraFin();
+                if (fin < ahora) {
+                    r.setEstado(Reserva.Estado.FINALIZADA);
+                }
+            }
+        }
+        for (List<Reserva> lista : reservasPorUsuario.values()) {
+            for (Reserva r : lista) {
+                if (r.getEstado() == Reserva.Estado.ACTIVA && r.getHora() != null) {
+                    long fin = r.getHora().getHoraFin();
+                    if (fin < ahora) {
+                        r.setEstado(Reserva.Estado.FINALIZADA);
+                    }
+                }
+            }
         }
     }
 
     @Override
     public void updateReservation(Reserva reserva, DataCallback<Boolean> callback) {
-        try {
-            Reserva reservaToUpdate = null;
-            for (Reserva r : todasReservas) {
-                if (r.getId().equals(reserva.getId())) {
-                    reservaToUpdate = r;
-                    break;
+        actualizarEstadosFinalizadas();
+        // Solo permitir actualizar si no hay solapamiento con reservas ACTIVAS (excepto la propia)
+        for (Reserva r : todasReservas) {
+            if (!r.getId().equals(reserva.getId()) && r.getPlaza() != null && r.getPlaza().getId().equals(reserva.getPlaza().getId()) && r.getFecha().equals(reserva.getFecha())
+                && r.getEstado() == Reserva.Estado.ACTIVA) {
+                long ini = r.getHora().getHoraInicio();
+                long fin = r.getHora().getHoraFin();
+                long nIni = reserva.getHora().getHoraInicio();
+                long nFin = reserva.getHora().getHoraFin();
+                if (!(nFin <= ini || nIni >= fin)) {
+                    callback.onFailure(new Exception("Plaza ocupada en ese horario"));
+                    return;
                 }
             }
-
-            if (reservaToUpdate == null) {
-                callback.onFailure(new Exception("Reserva no encontrada"));
-                return;
-            }
-
-            // Actualizar los campos de la reserva
-            reservaToUpdate.setFecha(reserva.getFecha());
-            reservaToUpdate.setHora(reserva.getHora());
-
-            // Verificar si la plaza existe en el sistema
-            if (reserva.getPlaza() != null) {
-                Plaza plazaActualizada = null;
-                String plazaId = reserva.getPlaza().getId();
-
-                if (plazaId != null && !plazaId.isEmpty()) {
-                    for (Plaza plaza : plazas) {
-                        if (plaza.getId().equals(plazaId)) {
-                            plazaActualizada = plaza;
-                            break;
-                        }
-                    }
-
-                    if (plazaActualizada != null) {
-                        reservaToUpdate.setPlaza(plazaActualizada);
-                    } else {
-                        callback.onFailure(new Exception("Plaza no encontrada"));
-                        return;
-                    }
-                } else {
-                    // Buscar por tipo si no hay ID específico
-                    String tipo = reserva.getPlaza().getTipo();
-                    for (Plaza plaza : plazas) {
-                        if (plaza.getTipo().equals(tipo)) {
-                            reservaToUpdate.setPlaza(plaza);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            callback.onSuccess(true);
-        } catch (Exception e) {
-            callback.onFailure(e);
         }
+        Reserva reservaToUpdate = null;
+        for (Reserva r : todasReservas) {
+            if (r.getId().equals(reserva.getId())) {
+                reservaToUpdate = r;
+                break;
+            }
+        }
+        if (reservaToUpdate == null) {
+            callback.onFailure(new Exception("Reserva no encontrada"));
+            return;
+        }
+        reservaToUpdate.setFecha(reserva.getFecha());
+        reservaToUpdate.setHora(reserva.getHora());
+        reservaToUpdate.setPlaza(reserva.getPlaza());
+        reservaToUpdate.setEstado(Reserva.Estado.ACTIVA);
+        callback.onSuccess(true);
     }
 
     @Override
     public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
-        try {
-            if (reserva.getPlaza() != null && reserva.getPlaza().getId() != null) {
-                boolean plazaExists = false;
-                for (Plaza plaza : plazas) {
-                    if (plaza.getId().equals(reserva.getPlaza().getId())) {
-                        plazaExists = true;
-                        break;
+        actualizarEstadosFinalizadas();
+        // Solo permitir crear si no hay solapamiento con reservas ACTIVAS
+        if (reserva.getPlaza() != null && reserva.getPlaza().getId() != null) {
+            for (Reserva r : todasReservas) {
+                if (r.getPlaza() != null && r.getPlaza().getId().equals(reserva.getPlaza().getId()) && r.getFecha().equals(reserva.getFecha())
+                    && r.getEstado() == Reserva.Estado.ACTIVA) {
+                    long ini = r.getHora().getHoraInicio();
+                    long fin = r.getHora().getHoraFin();
+                    long nIni = reserva.getHora().getHoraInicio();
+                    long nFin = reserva.getHora().getHoraFin();
+                    if (!(nFin <= ini || nIni >= fin)) {
+                        callback.onFailure(new Exception("Plaza ocupada en ese horario"));
+                        return;
                     }
                 }
-                if (!plazaExists) {
-                    callback.onFailure(new Exception("Plaza no encontrada"));
-                    return;
-                }
-            } else {
-                Plaza plazaDisponible = null;
-                for (Plaza plaza : plazas) {
-                    if (plaza.getTipo().equals(reserva.getPlaza().getTipo())) {
-                        plazaDisponible = plaza;
-                        break;
-                    }
-                }
-
-                if (plazaDisponible == null) {
-                    callback.onFailure(new Exception("No hay plazas disponibles del tipo solicitado"));
-                    return;
-                }
-
-                reserva.setPlaza(plazaDisponible);
             }
-
-            if (reserva.getId() == null || reserva.getId().isEmpty()) {
-                reserva.setId(UUID.randomUUID().toString());
-            }
-
-            todasReservas.add(reserva);
-
-            String userId = reserva.getUsuario();
-            List<Reserva> userReservations = reservasPorUsuario.get(userId);
-            if (userReservations == null) {
-                userReservations = new ArrayList<>();
-                reservasPorUsuario.put(userId, userReservations);
-            }
-            userReservations.add(reserva);
-
-            callback.onSuccess(true);
-        } catch (Exception e) {
-            callback.onFailure(e);
         }
+        if (reserva.getId() == null || reserva.getId().isEmpty()) {
+            reserva.setId(UUID.randomUUID().toString());
+        }
+        reserva.setEstado(Reserva.Estado.ACTIVA);
+        todasReservas.add(reserva);
+        String userId = reserva.getUsuario();
+        List<Reserva> userReservations = reservasPorUsuario.get(userId);
+        if (userReservations == null) {
+            userReservations = new ArrayList<>();
+            reservasPorUsuario.put(userId, userReservations);
+        }
+        userReservations.add(reserva);
+        callback.onSuccess(true);
+    }
+
+    private Map<String, List<Reserva>> getReservasPorPlaza(String fecha, long horaInicio, long horaFin, String tipo) {
+        Map<String, List<Reserva>> mapa = new HashMap<>();
+        for (Plaza plaza : plazas) {
+            if (tipo == null || plaza.getTipo().equals(tipo)) {
+                mapa.put(plaza.getId(), new ArrayList<>());
+            }
+        }
+        for (Reserva r : todasReservas) {
+            if (r.getFecha().equals(fecha)) {
+                long ini = r.getHora().getHoraInicio();
+                long fin = r.getHora().getHoraFin();
+                if (!(horaFin <= ini || horaInicio >= fin)) {
+                    String plazaId = r.getPlaza().getId();
+                    if (mapa.containsKey(plazaId)) {
+                        mapa.get(plazaId).add(r);
+                    }
+                }
+            }
+        }
+        return mapa;
+    }
+
+    @Override
+    public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
+        actualizarEstadosFinalizadas();
+        Map<String, List<Reserva>> mapa = getReservasPorPlaza(fecha, horaInicio, horaFin, tipo);
+        List<String> disponibles = new ArrayList<>();
+        for (Map.Entry<String, List<Reserva>> entry : mapa.entrySet()) {
+            boolean libre = true;
+            for (Reserva r : entry.getValue()) {
+                if (r.getEstado() == Reserva.Estado.ACTIVA) {
+                    libre = false;
+                    break;
+                }
+            }
+            if (libre) {
+                disponibles.add(entry.getKey());
+            }
+        }
+        callback.onSuccess(disponibles);
+    }
+
+    @Override
+    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<String> callback) {
+        getAvailablePlazas(tipo, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> disponibles) {
+                if (disponibles.isEmpty()) {
+                    callback.onSuccess(null);
+                } else {
+                    int idx = (int) (Math.random() * disponibles.size());
+                    callback.onSuccess(disponibles.get(idx));
+                }
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
     }
 
     @Override
     public void checkAvailability(Reserva reserva, DataCallback<Boolean> callback) {
-        try {
-            String fecha = reserva.getFecha();
-            long horaInicio = reserva.getHora().getHoraInicio();
-            long horaFin = reserva.getHora().getHoraFin();
-            String tipo = reserva.getPlaza().getTipo();
-            String plazaId = reserva.getPlaza().getId();
-
-            boolean isAvailable = true;
-
-            for (Reserva r : todasReservas) {
-                if (r.getFecha().equals(fecha)) {
-                    long reservaStart = r.getHora().getHoraInicio();
-                    long reservaEnd = r.getHora().getHoraFin();
-
-                    boolean timeOverlap = (horaInicio < reservaEnd && horaFin > reservaStart);
-
-                    boolean sameSpot = false;
-                    if (plazaId != null && !plazaId.isEmpty()) {
-                        sameSpot = r.getPlaza().getId().equals(plazaId);
-                    } else {
-                        sameSpot = r.getPlaza().getTipo().equals(tipo);
-                    }
-
-                    if (timeOverlap && sameSpot) {
-                        isAvailable = false;
-                        break;
-                    }
+        actualizarEstadosFinalizadas();
+        String fecha = reserva.getFecha();
+        long horaInicio = reserva.getHora().getHoraInicio();
+        long horaFin = reserva.getHora().getHoraFin();
+        String plazaId = reserva.getPlaza().getId();
+        Map<String, List<Reserva>> mapa = getReservasPorPlaza(fecha, horaInicio, horaFin, null);
+        boolean isAvailable = true;
+        if (mapa.containsKey(plazaId)) {
+            for (Reserva r : mapa.get(plazaId)) {
+                if (r.getEstado() == Reserva.Estado.ACTIVA) {
+                    isAvailable = false;
+                    break;
                 }
             }
-
-            callback.onSuccess(isAvailable);
-        } catch (Exception e) {
-            callback.onFailure(e);
         }
+        callback.onSuccess(isAvailable);
     }
 
     @Override
@@ -446,4 +477,30 @@ public class LocalDataSource implements DataSource {
         }
     }
 
+    @Override
+    public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
+        actualizarEstadosFinalizadas();
+        List<String> disponibles = new ArrayList<>();
+        int maxNumber = 10;
+        if (tipo.equals(Plaza.TIPO_MOTORCYCLE) && row.equals("E")) maxNumber = 8;
+        if (tipo.equals(Plaza.TIPO_DISABLED) && row.equals("F")) maxNumber = 5;
+        if (tipo.equals(Plaza.TIPO_CV_CHARGER) && row.equals("G")) maxNumber = 6;
+        for (int i = 1; i <= maxNumber; i++) {
+            String plazaId = row + "-" + i;
+            boolean reservada = false;
+            for (Reserva r : todasReservas) {
+                if (r.getPlaza() != null && plazaId.equals(r.getPlaza().getId()) && r.getFecha().equals(fecha)
+                    && r.getEstado() == Reserva.Estado.ACTIVA) {
+                    long ini = r.getHora().getHoraInicio();
+                    long fin = r.getHora().getHoraFin();
+                    if (!(horaFin <= ini || horaInicio >= fin)) {
+                        reservada = true;
+                        break;
+                    }
+                }
+            }
+            if (!reservada) disponibles.add(String.valueOf(i));
+        }
+        callback.onSuccess(disponibles);
+    }
 }

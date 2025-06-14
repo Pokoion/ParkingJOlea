@@ -14,8 +14,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.lksnext.parkingplantilla.R;
 import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
 import android.content.DialogInterface;
-import android.content.Intent;
-import com.lksnext.parkingplantilla.view.activity.CreateReservationActivity;
+import androidx.fragment.app.FragmentActivity;
+import com.lksnext.parkingplantilla.view.fragment.CreateReservationFragment;
 
 public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapter.ReservationViewHolder> {
 
@@ -90,15 +90,23 @@ public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapte
         }
 
         private void openEditReservationActivity(Context context, Reserva reserva) {
-            Intent intent = new Intent(context, CreateReservationActivity.class);
-            intent.putExtra("EDIT_MODE", true);
-            intent.putExtra("RESERVATION_ID", reserva.getId());
-            intent.putExtra("RESERVATION_TYPE", reserva.getPlaza().getTipo());
-            intent.putExtra("RESERVATION_DATE", reserva.getFecha());
-            intent.putExtra("RESERVATION_START_TIME", reserva.getHora().getHoraInicio());
-            intent.putExtra("RESERVATION_END_TIME", reserva.getHora().getHoraFin());
-            intent.putExtra("RESERVATION_SPOT", reserva.getPlaza().getId());
-            context.startActivity(intent);
+            // Abrir el fragmento en vez de la Activity
+            FragmentActivity activity = (FragmentActivity) context;
+            CreateReservationFragment fragment = new CreateReservationFragment();
+            android.os.Bundle args = new android.os.Bundle();
+            args.putBoolean("EDIT_MODE", true);
+            args.putString("RESERVATION_ID", reserva.getId());
+            args.putString("RESERVATION_TYPE", reserva.getPlaza().getTipo());
+            args.putString("RESERVATION_DATE", reserva.getFecha());
+            args.putLong("RESERVATION_START_TIME", reserva.getHora().getHoraInicio());
+            args.putLong("RESERVATION_END_TIME", reserva.getHora().getHoraFin());
+            args.putString("RESERVATION_SPOT", reserva.getPlaza().getId());
+            fragment.setArguments(args);
+            activity.getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(android.R.id.content, fragment)
+                    .addToBackStack(null)
+                    .commit();
         }
 
         public void bind(Reserva reserva) {
@@ -107,3 +115,4 @@ public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapte
         }
     }
 }
+

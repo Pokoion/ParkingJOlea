@@ -22,4 +22,11 @@ public interface DataSource {
     void login(String email, String password, DataCallback<User> callback);
     void register(String name, String email, String password, DataCallback<User> callback);
     void hasReservationOnDate(String userId, String date, DataCallback<Boolean> callback);
+
+    // Plaza-related methods
+    void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback);
+    void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<String> callback);
+
+    // Números disponibles en una fila concreta
+    void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback);
 }

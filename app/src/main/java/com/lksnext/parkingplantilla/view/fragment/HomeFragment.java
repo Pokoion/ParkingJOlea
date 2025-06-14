@@ -1,10 +1,10 @@
 package com.lksnext.parkingplantilla.view.fragment;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.content.Intent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,12 +16,23 @@ import com.lksnext.parkingplantilla.databinding.CardReservationNextBinding;
 import com.lksnext.parkingplantilla.databinding.FragmentHomeBinding;
 import com.lksnext.parkingplantilla.domain.Reserva;
 import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
-import com.lksnext.parkingplantilla.view.activity.CreateReservationActivity;
 
 public class HomeFragment extends Fragment {
 
     private FragmentHomeBinding binding;
     private ReservationsViewModel viewModel;
+
+    private Handler refreshHandler = new Handler();
+    private final int REFRESH_INTERVAL_MS = 60000; // 30 segundos
+    private final Runnable refreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (isResumed()) {
+                viewModel.loadCurrentAndNextReservations();
+                refreshHandler.postDelayed(this, REFRESH_INTERVAL_MS);
+            }
+        }
+    };
 
     public HomeFragment() {
         // Constructor vacío requerido
@@ -60,17 +71,29 @@ public class HomeFragment extends Fragment {
 
         // Configurar FAB para crear nueva reserva
         binding.createReservationButton.setOnClickListener(v -> {
-            Intent intent = new Intent(requireContext(), CreateReservationActivity.class);
-            startActivity(intent);
+            // Abrir el nuevo fragmento en vez de la Activity
+            requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(android.R.id.content, new CreateReservationFragment())
+                .addToBackStack(null)
+                .commit();
         });
-
-        // Aumentar el espaciado vertical para los mensajes de "no hay reservas"
-        binding.noCurrentReservationText.setPadding(0, 40, 0, 40);
-        binding.noNextReservationText.setPadding(0, 40, 0, 40);
 
         // Cargar datos
         viewModel.loadCurrentAndNextReservations();
 
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshHandler.postDelayed(refreshRunnable, REFRESH_INTERVAL_MS);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        refreshHandler.removeCallbacks(refreshRunnable);
     }
 
     private void updateCurrentReservation(Reserva reserva) {
@@ -85,6 +108,10 @@ public class HomeFragment extends Fragment {
             // Asignar la reserva a la tarjeta
             cardBinding.setReserva(reserva);
 
+            // Calcular el texto de tiempo restante y asignarlo
+            String timeRemaining = com.lksnext.parkingplantilla.utils.DateUtils.getTimeRemainingText(reserva);
+            cardBinding.timeRemainingTextView.setText(timeRemaining);
+
             // Limpiar el contenedor y agregar la tarjeta
             binding.currentReservationContainer.removeAllViews();
             binding.currentReservationContainer.addView(cardBinding.getRoot());
@@ -97,21 +124,24 @@ public class HomeFragment extends Fragment {
 
     private void updateNextReservation(Reserva reserva) {
         if (reserva != null) {
-            // Hay una próxima reserva, mostrar la tarjeta
             binding.noNextReservationText.setVisibility(View.GONE);
-
-            // Inflar la vista de la tarjeta usando card_reservation_next.xml
             CardReservationNextBinding cardBinding = CardReservationNextBinding.inflate(
                     getLayoutInflater(), binding.nextReservationContainer, false);
-
-            // Asignar la reserva a la tarjeta
             cardBinding.setReserva(reserva);
 
-            // Limpiar el contenedor y agregar la tarjeta
+            String timeText;
+            if (com.lksnext.parkingplantilla.utils.DateUtils.isFutureReservation(reserva)) {
+                timeText = com.lksnext.parkingplantilla.utils.DateUtils.getTimeUntilText(reserva);
+            } else if (com.lksnext.parkingplantilla.utils.DateUtils.isOngoingReservation(reserva)) {
+                timeText = com.lksnext.parkingplantilla.utils.DateUtils.getTimeRemainingText(reserva);
+            } else {
+                timeText = "Finalizada";
+            }
+            cardBinding.timeUntilTextView.setText(timeText);
+
             binding.nextReservationContainer.removeAllViews();
             binding.nextReservationContainer.addView(cardBinding.getRoot());
         } else {
-            // No hay próxima reserva, mostrar mensaje
             binding.nextReservationContainer.removeAllViews();
             binding.noNextReservationText.setVisibility(View.VISIBLE);
         }
@@ -123,3 +153,4 @@ public class HomeFragment extends Fragment {
         binding = null;
     }
 }
+
