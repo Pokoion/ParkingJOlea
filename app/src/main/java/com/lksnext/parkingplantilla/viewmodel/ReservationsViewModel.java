@@ -27,8 +27,7 @@ public class ReservationsViewModel extends ViewModel {
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
 
-    // NUEVO: LiveData para plazas disponibles y plaza random asignada
-    private final MutableLiveData<List<String>> availablePlazas = new MutableLiveData<>();
+    // NUEVO: LiveData para plaza random asignada
     private final MutableLiveData<String> randomPlaza = new MutableLiveData<>();
 
     // NUEVO: LiveData para números de plaza disponibles en una fila concreta
@@ -60,10 +59,6 @@ public class ReservationsViewModel extends ViewModel {
 
     public LiveData<String> getError() {
         return error;
-    }
-
-    public LiveData<List<String>> getAvailablePlazas() {
-        return availablePlazas;
     }
 
     public LiveData<String> getRandomPlaza() {
@@ -330,6 +325,8 @@ public class ReservationsViewModel extends ViewModel {
             public void onSuccess(Boolean updateResult) {
                 result.setValue(updateResult);
                 loadUserReservations();
+                loadCurrentReservation();
+                loadNextReservation();
                 isLoading.setValue(false);
             }
 
@@ -399,25 +396,6 @@ public class ReservationsViewModel extends ViewModel {
         });
 
         return reservedDates;
-    }
-
-    // NUEVO: Solicitar plazas disponibles
-    public void loadAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin) {
-        isLoading.setValue(true);
-        repository.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
-            @Override
-            public void onSuccess(List<String> result) {
-                availablePlazas.postValue(result);
-                isLoading.postValue(false);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                error.postValue("Error al cargar plazas disponibles: " + e.getMessage());
-                availablePlazas.postValue(new ArrayList<>());
-                isLoading.postValue(false);
-            }
-        });
     }
 
     // NUEVO: Solicitar plaza random (el backend la asigna y la devuelve)

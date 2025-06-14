@@ -29,7 +29,7 @@ public class CurrentReservationsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        viewModel = new ViewModelProvider(requireParentFragment()).get(ReservationsViewModel.class);
+        viewModel = new ViewModelProvider(requireActivity()).get(ReservationsViewModel.class);
 
         ReservationsAdapter adapter = new ReservationsAdapter(viewModel);
         binding.recyclerViewReservations.setAdapter(adapter);
@@ -52,3 +52,4 @@ public class CurrentReservationsFragment extends Fragment {
         binding = null;
     }
 }
+

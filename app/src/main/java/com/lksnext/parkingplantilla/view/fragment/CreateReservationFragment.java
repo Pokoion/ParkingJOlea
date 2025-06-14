@@ -54,7 +54,7 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        viewModel = new ViewModelProvider(this).get(ReservationsViewModel.class);
+        viewModel = new ViewModelProvider(requireActivity()).get(ReservationsViewModel.class);
 
         // Obtener argumentos
         Bundle args = getArguments();
@@ -329,7 +329,7 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
             updateRowSpinner(availableRows);
             if (binding.parkingRowSpinner.getSelectedItem() != null) {
                 String selectedRow = binding.parkingRowSpinner.getSelectedItem().toString();
-                viewModel.loadAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs);
+                viewModel.loadAvailableNumbers(selectedType, selectedRow, apiDate, startTimeMs, endTimeMs);
             }
         }
     }
@@ -549,11 +549,6 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
     }
 
     private void observeViewModel() {
-        viewModel.getAvailablePlazas().observe(getViewLifecycleOwner(), plazas -> {
-            if (binding.manualParkingRadioButton.isChecked()) {
-                // Ya no se usa para el spinner de números, solo para random
-            }
-        });
         viewModel.getAvailableNumbers().observe(getViewLifecycleOwner(), numbers -> {
             if (binding.manualParkingRadioButton.isChecked()) {
                 updateNumberSpinner(numbers);

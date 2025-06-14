@@ -317,31 +317,9 @@ public class LocalDataSource implements DataSource {
      * NOTA: En entorno de producción (Firebase o backend), esta lógica debe implementarse en el servidor
      * para que el estado se actualice aunque la app esté cerrada. Aquí solo se usa para entorno local/demo.
      */
-    private void actualizarEstadosFinalizadas() {
-        long ahora = System.currentTimeMillis();
-        for (Reserva r : todasReservas) {
-            if (r.getEstado() == Reserva.Estado.ACTIVA && r.getHora() != null) {
-                long fin = r.getHora().getHoraFin();
-                if (fin < ahora) {
-                    r.setEstado(Reserva.Estado.FINALIZADA);
-                }
-            }
-        }
-        for (List<Reserva> lista : reservasPorUsuario.values()) {
-            for (Reserva r : lista) {
-                if (r.getEstado() == Reserva.Estado.ACTIVA && r.getHora() != null) {
-                    long fin = r.getHora().getHoraFin();
-                    if (fin < ahora) {
-                        r.setEstado(Reserva.Estado.FINALIZADA);
-                    }
-                }
-            }
-        }
-    }
 
     @Override
     public void updateReservation(Reserva reserva, DataCallback<Boolean> callback) {
-        actualizarEstadosFinalizadas();
         // Solo permitir actualizar si no hay solapamiento con reservas ACTIVAS (excepto la propia)
         for (Reserva r : todasReservas) {
             if (!r.getId().equals(reserva.getId()) && r.getPlaza() != null && r.getPlaza().getId().equals(reserva.getPlaza().getId()) && r.getFecha().equals(reserva.getFecha())
@@ -376,7 +354,6 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
-        actualizarEstadosFinalizadas();
         // Solo permitir crear si no hay solapamiento con reservas ACTIVAS
         if (reserva.getPlaza() != null && reserva.getPlaza().getId() != null) {
             for (Reserva r : todasReservas) {
@@ -432,7 +409,6 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
-        actualizarEstadosFinalizadas();
         Map<String, List<Reserva>> mapa = getReservasPorPlaza(fecha, horaInicio, horaFin, tipo);
         List<String> disponibles = new ArrayList<>();
         for (Map.Entry<String, List<Reserva>> entry : mapa.entrySet()) {
@@ -471,7 +447,6 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public void checkAvailability(Reserva reserva, DataCallback<Boolean> callback) {
-        actualizarEstadosFinalizadas();
         String fecha = reserva.getFecha();
         long horaInicio = reserva.getHora().getHoraInicio();
         long horaFin = reserva.getHora().getHoraFin();
@@ -514,7 +489,6 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
-        actualizarEstadosFinalizadas();
         List<String> disponibles = new ArrayList<>();
         int maxNumber = 10;
         if (tipo.equals(Plaza.TIPO_MOTORCYCLE) && row.equals("E")) maxNumber = 8;
