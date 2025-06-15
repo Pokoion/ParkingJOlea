@@ -12,10 +12,12 @@ import com.lksnext.parkingplantilla.domain.User;
 import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.utils.DateUtils;
+import com.lksnext.parkingplantilla.utils.Validators;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 public class ReservationsViewModel extends ViewModel {
 
@@ -26,11 +28,7 @@ public class ReservationsViewModel extends ViewModel {
     private final MutableLiveData<Reserva> nextReservation = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
     private final MutableLiveData<String> error = new MutableLiveData<>();
-
-    // NUEVO: LiveData para plaza random asignada
     private final MutableLiveData<String> randomPlaza = new MutableLiveData<>();
-
-    // NUEVO: LiveData para números de plaza disponibles en una fila concreta
     private final MutableLiveData<List<String>> availableNumbers = new MutableLiveData<>();
 
     public ReservationsViewModel() {
@@ -214,7 +212,6 @@ public class ReservationsViewModel extends ViewModel {
         repository.deleteReservation(reservaId, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
-                // Recargar ambas listas para reflejar el cambio en ambos fragmentos
                 loadUserReservations();
                 loadHistoricReservations();
                 isLoading.setValue(false);
@@ -292,6 +289,7 @@ public class ReservationsViewModel extends ViewModel {
             public void onSuccess(Boolean success) {
                 result.postValue(success);
                 loadUserReservations();
+                loadCurrentAndNextReservations();
                 isLoading.postValue(false);
             }
 
@@ -436,4 +434,3 @@ public class ReservationsViewModel extends ViewModel {
     }
 
 }
-

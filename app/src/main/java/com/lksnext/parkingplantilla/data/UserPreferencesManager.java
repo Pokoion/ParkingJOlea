@@ -11,6 +11,9 @@ public class UserPreferencesManager {
     private static final String USER_NAME_KEY = "user_name";
     private static final String USER_EMAIL_KEY = "user_email";
     private static final String IS_LOGGED_IN_KEY = "is_logged_in";
+    private static final String FIRST_TIME_USER_FRAGMENT_KEY = "first_time_user_fragment";
+    private static final String START_REMINDER_ENABLED_KEY = "start_reminder_enabled";
+    private static final String END_REMINDER_ENABLED_KEY = "end_reminder_enabled";
 
     private final SharedPreferences sharedPreferences;
 
@@ -49,9 +52,38 @@ public class UserPreferencesManager {
 
     public void clearUserData() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.remove(USER_NAME_KEY);
-        editor.remove(USER_EMAIL_KEY);
-        editor.putBoolean(IS_LOGGED_IN_KEY, false);
+        editor.clear(); // Borra todas las preferencias del usuario
+        editor.apply();
+    }
+
+    public boolean isFirstTimeUserFragment() {
+        return sharedPreferences.getBoolean(FIRST_TIME_USER_FRAGMENT_KEY, true);
+    }
+
+    public void setFirstTimeUserFragment(boolean isFirstTime) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(FIRST_TIME_USER_FRAGMENT_KEY, isFirstTime);
+        editor.apply();
+    }
+
+    public boolean isStartReminderEnabled() {
+        return sharedPreferences.getBoolean(START_REMINDER_ENABLED_KEY, false);
+    }
+
+    public void setStartReminderEnabled(boolean enabled) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(START_REMINDER_ENABLED_KEY, enabled);
+        editor.apply();
+    }
+
+    public boolean isEndReminderEnabled() {
+        return sharedPreferences.getBoolean(END_REMINDER_ENABLED_KEY, false);
+    }
+
+    public void setEndReminderEnabled(boolean enabled) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(END_REMINDER_ENABLED_KEY, enabled);
         editor.apply();
     }
 }
+

@@ -55,4 +55,21 @@ public class Validators {
             return "Intervalo de " + diffHours + " horas seleccionado";
         }
     }
+
+    public static boolean isValidReservationStart(Calendar start) {
+        Calendar now = Calendar.getInstance();
+        // Redondear a minutos para evitar falsos negativos por milisegundos
+        now.set(Calendar.SECOND, 0);
+        now.set(Calendar.MILLISECOND, 0);
+        start.set(Calendar.SECOND, 0);
+        start.set(Calendar.MILLISECOND, 0);
+        return !start.before(now);
+    }
+
+    public static boolean isValidReservationDuration(Calendar start, Calendar end, int maxHours) {
+        long diffMillis = end.getTimeInMillis() - start.getTimeInMillis();
+        double diffHours = diffMillis / (1000.0 * 60 * 60);
+        return diffMillis > 0 && diffHours <= maxHours;
+    }
 }
+

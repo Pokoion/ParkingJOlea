@@ -34,7 +34,7 @@ public class HistoricReservationsFragment extends Fragment {
         binding.recyclerViewReservations.setAdapter(adapter);
 
         // Compartir ViewModel con el fragmento padre
-        viewModel = new ViewModelProvider(requireParentFragment()).get(ReservationsViewModel.class);
+        viewModel = new ViewModelProvider(requireActivity()).get(ReservationsViewModel.class);
 
         // Observar reservas históricas
         viewModel.getHistoricReservations().observe(getViewLifecycleOwner(), reservas -> {

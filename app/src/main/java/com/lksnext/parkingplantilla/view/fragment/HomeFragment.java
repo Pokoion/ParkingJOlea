@@ -49,7 +49,7 @@ public class HomeFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         // Inicializar ViewModel
-        viewModel = new ViewModelProvider(this).get(ReservationsViewModel.class);
+        viewModel = new ViewModelProvider(requireActivity()).get(ReservationsViewModel.class);
 
         // Observar la reserva actual
         viewModel.getCurrentReservation().observe(getViewLifecycleOwner(), this::updateCurrentReservation);

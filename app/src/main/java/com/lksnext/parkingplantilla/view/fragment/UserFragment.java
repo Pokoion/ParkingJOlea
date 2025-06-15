@@ -5,22 +5,29 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 import com.lksnext.parkingplantilla.databinding.FragmentUserBinding;
 import com.lksnext.parkingplantilla.view.activity.LoginActivity;
 import com.lksnext.parkingplantilla.viewmodel.LoginViewModel;
 import com.lksnext.parkingplantilla.viewmodel.UserViewModel;
+import com.lksnext.parkingplantilla.data.UserPreferencesManager;
 
 public class UserFragment extends Fragment {
 
     private FragmentUserBinding binding;
     private UserViewModel userViewModel;
     private LoginViewModel loginViewModel;
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
+    private android.widget.CompoundButton lastSwitchTriedToEnable = null;
+    private UserPreferencesManager userPreferencesManager;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -32,17 +39,21 @@ public class UserFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Initialize ViewModels
+        notificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (!isGranted && lastSwitchTriedToEnable != null) {
+                        lastSwitchTriedToEnable.setChecked(false);
+                    }
+                    lastSwitchTriedToEnable = null;
+                }
+        );
+
+        userPreferencesManager = new UserPreferencesManager(requireContext());
         userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
         loginViewModel = new ViewModelProvider(requireActivity()).get(LoginViewModel.class);
-
-        // Connect the ViewModels
         userViewModel.setLoginViewModel(loginViewModel);
-
-        // Set up UI components
         setupUI();
-
-        // Observe logout state
         observeLogout();
     }
 
@@ -63,17 +74,37 @@ public class UserFragment extends Fragment {
     }
 
     private void setupNotificationSwitches() {
-        // Establecer el estado inicial de los switches según las preferencias guardadas
-        binding.startReminderSwitch.setChecked(userViewModel.isStartReminderEnabled());
-        binding.endReminderSwitch.setChecked(userViewModel.isEndReminderEnabled());
+        if (userPreferencesManager.isFirstTimeUserFragment()) {
+            binding.startReminderSwitch.setChecked(false);
+            binding.endReminderSwitch.setChecked(false);
+            userPreferencesManager.setStartReminderEnabled(false);
+            userPreferencesManager.setEndReminderEnabled(false);
+            userPreferencesManager.setFirstTimeUserFragment(false);
+        } else {
+            binding.startReminderSwitch.setChecked(userPreferencesManager.isStartReminderEnabled());
+            binding.endReminderSwitch.setChecked(userPreferencesManager.isEndReminderEnabled());
+        }
 
-        // Configurar listeners para los switches
         binding.startReminderSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            userViewModel.setStartReminderEnabled(isChecked);
+            if (isChecked) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                        requireContext().checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    lastSwitchTriedToEnable = (android.widget.CompoundButton) buttonView;
+                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
+                }
+            }
+            userPreferencesManager.setStartReminderEnabled(isChecked);
         });
 
         binding.endReminderSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            userViewModel.setEndReminderEnabled(isChecked);
+            if (isChecked) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                        requireContext().checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    lastSwitchTriedToEnable = (android.widget.CompoundButton) buttonView;
+                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
+                }
+            }
+            userPreferencesManager.setEndReminderEnabled(isChecked);
         });
     }
 
@@ -137,3 +168,4 @@ public class UserFragment extends Fragment {
         binding = null;
     }
 }
+
