@@ -529,7 +529,26 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
                 int rowPosition = getPositionInAdapter(binding.parkingRowSpinner, spotParts[0]);
                 if (rowPosition >= 0) {
                     binding.parkingRowSpinner.setSelection(rowPosition);
-                    updateNumberSpinner(new ArrayList<>());
+                    // Esperar a que se carguen los números disponibles y seleccionar el correcto
+                    binding.parkingRowSpinner.post(() -> {
+                        viewModel.getAvailableNumbers().observe(getViewLifecycleOwner(), numbers -> {
+                            if (numbers != null && !numbers.isEmpty()) {
+                                int numberPosition = getPositionInAdapter(binding.parkingNumberSpinner, spotParts[1]);
+                                if (numberPosition >= 0) {
+                                    binding.parkingNumberSpinner.setSelection(numberPosition);
+                                }
+                            }
+                        });
+                        // Forzar la carga de números disponibles para la fila seleccionada
+                        String apiDate = DateUtils.formatDateForApi(selectedDate);
+                        long startMs = DateUtils.timeToMs(
+                                startTime.get(Calendar.HOUR_OF_DAY),
+                                startTime.get(Calendar.MINUTE));
+                        long endMs = DateUtils.timeToMs(
+                                endTime.get(Calendar.HOUR_OF_DAY),
+                                endTime.get(Calendar.MINUTE));
+                        viewModel.loadAvailableNumbers(selectedType, spotParts[0], apiDate, startMs, endMs);
+                    });
                 }
             }
         } else {
@@ -559,7 +578,11 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
             if (plazaId != null) {
                 // Crear reserva con la plaza random asignada
                 continueWithSaveProcessRandom(plazaId);
-            } else {
+                // Limpiar el valor para evitar ejecuciones automáticas
+                viewModel.clearRandomPlaza();
+            }
+            // No mostrar mensaje si plazaId es null y el loading está oculto (ya se consumió)
+            else if (binding.loadingIndicator.getVisibility() == View.VISIBLE) {
                 Toast.makeText(requireContext(), "No se pudo asignar una plaza aleatoria", Toast.LENGTH_SHORT).show();
                 binding.loadingIndicator.setVisibility(View.GONE);
             }

@@ -63,6 +63,11 @@ public class ReservationsViewModel extends ViewModel {
         return randomPlaza;
     }
 
+    // Método para limpiar el valor de randomPlaza
+    public void clearRandomPlaza() {
+        randomPlaza.setValue(null);
+    }
+
     public LiveData<List<String>> getAvailableNumbers() {
         return availableNumbers;
     }
