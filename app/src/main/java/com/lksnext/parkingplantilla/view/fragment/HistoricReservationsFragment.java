@@ -38,9 +38,13 @@ public class HistoricReservationsFragment extends Fragment {
 
         // Observar reservas históricas
         viewModel.getHistoricReservations().observe(getViewLifecycleOwner(), reservas -> {
-            if (reservas != null) {
+            if (reservas != null && !reservas.isEmpty()) {
                 adapter.setReservas(reservas);
-                binding.recyclerViewReservations.setVisibility(reservas.isEmpty() ? View.GONE : View.VISIBLE);
+                binding.recyclerViewReservations.setVisibility(View.VISIBLE);
+                binding.noReservationsText.setVisibility(View.GONE);
+            } else {
+                binding.recyclerViewReservations.setVisibility(View.GONE);
+                binding.noReservationsText.setVisibility(View.VISIBLE);
             }
         });
 
@@ -54,3 +58,4 @@ public class HistoricReservationsFragment extends Fragment {
         binding = null;
     }
 }
+

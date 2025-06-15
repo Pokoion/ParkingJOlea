@@ -112,6 +112,11 @@ public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapte
         public void bind(Reserva reserva) {
             binding.setReserva(reserva);
             binding.executePendingBindings();
+            boolean isOngoing = com.lksnext.parkingplantilla.utils.DateUtils.isOngoingReservation(reserva);
+            binding.editButton.setEnabled(!isOngoing);
+            binding.deleteButton.setEnabled(!isOngoing);
+            binding.editButton.setAlpha(isOngoing ? 0.5f : 1f);
+            binding.deleteButton.setAlpha(isOngoing ? 0.5f : 1f);
         }
     }
 }

@@ -13,6 +13,9 @@ import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.utils.DateUtils;
 import com.lksnext.parkingplantilla.utils.Validators;
+import com.lksnext.parkingplantilla.notifications.NotificationScheduler;
+import com.lksnext.parkingplantilla.data.UserPreferencesManager;
+import android.content.Context;
 
 import java.util.List;
 import java.util.UUID;
@@ -209,11 +212,54 @@ public class ReservationsViewModel extends ViewModel {
         });
     }
 
+    private void scheduleReservationNotifications(Reserva reserva) {
+        Context context = ParkingApplication.getAppContext();
+        UserPreferencesManager prefs = new UserPreferencesManager(context);
+        long now = System.currentTimeMillis();
+        long startReminderTime = DateUtils.getStartReminderTime(reserva);
+        long endReminderTime = DateUtils.getEndReminderTime(reserva);
+        String reservaId = reserva.getId();
+        // Notificación de inicio (30 min antes)
+        if (prefs.isStartReminderEnabled() && (startReminderTime - now) > 0) {
+            NotificationScheduler.scheduleReservationNotification(
+                context,
+                startReminderTime,
+                "Tu reserva está por comenzar",
+                "Tu reserva de parking comienza en 30 minutos.",
+                reservaId + "_start"
+            );
+        }
+        // Notificación de fin (15 min antes de terminar)
+        if (prefs.isEndReminderEnabled() && (endReminderTime - now) > 0) {
+            NotificationScheduler.scheduleReservationNotification(
+                context,
+                endReminderTime,
+                "Tu reserva está por terminar",
+                "Tu reserva de parking termina en 15 minutos.",
+                reservaId + "_end"
+            );
+        }
+    }
+
+    private void cancelReservationNotifications(Reserva reserva) {
+        Context context = ParkingApplication.getAppContext();
+        String reservaId = reserva.getId();
+        NotificationScheduler.cancelReservationNotification(context, reservaId + "_start");
+        NotificationScheduler.cancelReservationNotification(context, reservaId + "_end");
+    }
+
+    private void cancelReservationNotifications(String reservaId) {
+        Context context = ParkingApplication.getAppContext();
+        NotificationScheduler.cancelReservationNotification(context, reservaId + "_start");
+        NotificationScheduler.cancelReservationNotification(context, reservaId + "_end");
+    }
+
     /**
      * Elimina una reserva por su ID
      */
     public void deleteReservation(String reservaId) {
         isLoading.setValue(true);
+        cancelReservationNotifications(reservaId);
         repository.deleteReservation(reservaId, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean result) {
@@ -289,6 +335,9 @@ public class ReservationsViewModel extends ViewModel {
         if (reserva.getId() == null || reserva.getId().isEmpty()) {
             reserva.setId(UUID.randomUUID().toString());
         }
+
+        scheduleReservationNotifications(reserva);
+
         repository.createReservation(reserva, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean success) {
@@ -322,6 +371,9 @@ public class ReservationsViewModel extends ViewModel {
             isLoading.setValue(false);
             return result;
         }
+
+        cancelReservationNotifications(reserva);
+        scheduleReservationNotifications(reserva);
 
         repository.updateReservation(reserva, new DataCallback<Boolean>() {
             @Override

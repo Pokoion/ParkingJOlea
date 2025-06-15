@@ -277,4 +277,18 @@ public class DateUtils {
             return !end.before(hace30dias) && end.before(now);
         }
     }
+
+    /**
+     * Devuelve el timestamp para la notificación de inicio (30 min antes de la reserva)
+     */
+    public static long getStartReminderTime(Reserva reserva) {
+        return getReservaDateTime(reserva).getTime() - 30 * 60 * 1000;
+    }
+
+    /**
+     * Devuelve el timestamp para la notificación de fin (15 min antes de que termine la reserva)
+     */
+    public static long getEndReminderTime(Reserva reserva) {
+        return getReservaEndTime(reserva).getTime() - 15 * 60 * 1000;
+    }
 }

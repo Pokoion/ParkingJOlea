@@ -23,7 +23,7 @@ public class HomeFragment extends Fragment {
     private ReservationsViewModel viewModel;
 
     private Handler refreshHandler = new Handler();
-    private final int REFRESH_INTERVAL_MS = 60000; // 30 segundos
+    private final int REFRESH_INTERVAL_MS = 10000; // 10 segundos
     private final Runnable refreshRunnable = new Runnable() {
         @Override
         public void run() {
