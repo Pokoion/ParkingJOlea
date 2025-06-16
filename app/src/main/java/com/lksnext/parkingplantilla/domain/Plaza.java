@@ -5,10 +5,10 @@ import java.util.Map;
 
 public class Plaza {
 
-    public static final String TIPO_STANDARD = "Standard";
-    public static final String TIPO_MOTORCYCLE = "Motorcycle";
-    public static final String TIPO_CV_CHARGER = "CV Charger";
-    public static final String TIPO_DISABLED = "Disabled";
+    public static final String TIPO_STANDARD = "Estándar";
+    public static final String TIPO_MOTORCYCLE = "Motocicleta";
+    public static final String TIPO_CV_CHARGER = "Carga CV";
+    public static final String TIPO_DISABLED = "Discapacitado";
 
     private static final Map<String, String> TIPO_IMAGES = new HashMap<>();
     static {

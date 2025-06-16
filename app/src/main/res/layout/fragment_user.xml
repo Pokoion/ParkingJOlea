@@ -23,7 +23,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Profile Settings"
+                android:text="Ajustes de Perfil"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
@@ -74,7 +74,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="Notifications Settings"
+                android:text="Ajustes de Notificaciones"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
@@ -85,19 +85,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="30 minute Start Reminder"
                 android:paddingVertical="8dp"
-                app:layout_constraintStart_toStartOf="parent"
+                android:text="Recuerdo de comienzo en 30 minutos"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/notificationsSettingsText" />
 
             <TextView
                 android:id="@+id/startReminderText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Get notified before reservation starts"
-                android:textSize="12sp"
                 android:layout_marginTop="4dp"
+                android:text="Notificación antes de que empiece la reserva"
+                android:textSize="12sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/startReminderSwitch" />
 
@@ -106,19 +106,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="15 minute End Reminder"
                 android:paddingVertical="8dp"
-                app:layout_constraintStart_toStartOf="parent"
+                android:text="Recuerdo de finalización en 15 minutos"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/startReminderText" />
 
             <TextView
                 android:id="@+id/endReminderText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Get notified before reservation ends"
-                android:textSize="12sp"
                 android:layout_marginTop="4dp"
+                android:text="Notificación antes de que acabe la reserva"
+                android:textSize="12sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/endReminderSwitch" />
 
@@ -136,7 +136,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="Interface Settings"
+                android:text="Ajustes de Interfaz"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
@@ -157,31 +157,31 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
-                    android:text="Light" />
+                    android:text="Claro" />
 
                 <RadioButton
                     android:id="@+id/radioButtonDark"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
-                    android:text="Dark" />
+                    android:text="Oscuro" />
 
                 <RadioButton
                     android:id="@+id/radioButtonSystem"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="System" />
+                    android:text="Sistema" />
             </RadioGroup>
 
             <Button
                 android:id="@+id/logoutButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="40dp"
-                android:text="LOG OUT"
                 android:layout_marginHorizontal="32dp"
-                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="40dp"
+                android:text="Salir"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/themeRadioGroup" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

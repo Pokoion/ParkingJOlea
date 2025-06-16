@@ -64,29 +64,29 @@ public class RegisterActivity extends AppCompatActivity {
 
         switch (error) {
             case INVALID_EMAIL:
-                binding.email.setError(getString(R.string.invalid_email_format));
+                binding.email.setError("Email inválido");
                 break;
 
             case USERNAME_EMPTY:
-                binding.user.setError(getString(R.string.username_required));
+                binding.user.setError("Nombre de usuario vacío");
                 break;
 
             case PASSWORD_TOO_SHORT:
-                binding.password.setError(getString(R.string.password_too_short));
+                binding.password.setError("La contraseña debe tener al menos 6 caracteres");
                 break;
 
             case EMAIL_ALREADY_EXISTS:
-                binding.email.setError(getString(R.string.email_already_exists));
+                binding.email.setError("El email ya está en uso");
                 break;
 
             case NETWORK_ERROR:
                 SnackbarUtils.showVisibleSnackbar(this, binding.getRoot(),
-                        getString(R.string.network_error), Snackbar.LENGTH_LONG);
+                        "Error de red. Por favor, comprueba tu conexión.", Snackbar.LENGTH_LONG);
                 break;
 
             case APPLICATION_ERROR:
                 SnackbarUtils.showVisibleSnackbar(this, binding.getRoot(),
-                        getString(R.string.application_error), Snackbar.LENGTH_LONG);
+                        "Error en la aplicación. Por favor, inténtalo más tarde.", Snackbar.LENGTH_LONG);
                 break;
         }
     }

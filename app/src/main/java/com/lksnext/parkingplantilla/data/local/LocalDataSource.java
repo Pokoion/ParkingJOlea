@@ -185,14 +185,14 @@ public class LocalDataSource implements DataSource {
         if (storedUser != null && storedUser.getPassword().equals(password)) {
             callback.onSuccess(storedUser); // Return the user object
         } else {
-            callback.onFailure(new Exception("Invalid credentials"));
+            callback.onFailure(new Exception("Credenciales incorrectas"));
         }
     }
 
     @Override
     public void register(String name, String email, String password, DataCallback<User> callback) {
         if (fakeDatabase.containsKey(email)) {
-            callback.onFailure(new Exception("User already exists"));
+            callback.onFailure(new Exception("El email ya está en uso"));
         } else {
             User newUser = new User(name, email, password);
             fakeDatabase.put(email, newUser);

@@ -61,14 +61,13 @@
                 android:layout_marginBottom="16dp"
                 android:text="@{reserva.hora.toString()}"
                 android:textSize="14sp"
-                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="@+id/tvReservationType"
                 app:layout_constraintTop_toBottomOf="@+id/tvDate" />
 
             <ImageView
                 android:id="@+id/imgIcon"
-                android:layout_width="30dp"
-                android:layout_height="24dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
                 app:imageResource="@{reserva.plaza.imageResource}"
@@ -76,26 +75,35 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:tint="@color/colorHint" />
 
-            <Button
-                android:id="@+id/editButton"
-                android:layout_width="100dp"
-                android:layout_height="50dp"
+            <LinearLayout
+                android:id="@+id/buttonLayout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
                 android:layout_marginEnd="16dp"
-                android:layout_marginBottom="16dp"
-                android:text="Edit"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/deleteButton" />
+                android:gravity="end"
+                android:orientation="horizontal"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tvTime">
 
-            <Button
-                android:id="@+id/deleteButton"
-                android:layout_width="100dp"
-                android:layout_height="50dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="16dp"
-                android:text="Delete"
-                app:backgroundTint="@color/red"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
+                <Button
+                    android:id="@+id/editButton"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:text="Editar" />
+
+                <Button
+                    android:id="@+id/deleteButton"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="Cancelar"
+                    app:backgroundTint="@color/red" />
+            </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>

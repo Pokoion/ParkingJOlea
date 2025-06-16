@@ -23,7 +23,7 @@
 
             <TextView
                 android:id="@+id/timeRemainingTextView"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
@@ -32,7 +32,10 @@
                 android:textSize="14sp"
                 android:textStyle="italic"
                 app:layout_constraintStart_toEndOf="@+id/currentPlaceTypeTextView"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/currentPlaceIconImageView"
+                app:layout_constraintHorizontal_bias="0"
+            />
 
             <TextView
                 android:id="@+id/currentPlaceTypeTextView"

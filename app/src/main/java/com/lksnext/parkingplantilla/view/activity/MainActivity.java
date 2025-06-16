@@ -68,9 +68,9 @@ public class MainActivity extends AppCompatActivity {
         // Observamos el usuario actual desde el ViewModel
         mainViewModel.getCurrentUser().observe(this, user -> {
             if (user != null) {
-                binding.textView2.setText("Welcome, " + user.getName() + "!");
+                binding.textView2.setText("Bienvenido, " + user.getName() + "!");
             } else {
-                binding.textView2.setText("Welcome!");
+                binding.textView2.setText("Bienvenido!");
             }
         });
     }

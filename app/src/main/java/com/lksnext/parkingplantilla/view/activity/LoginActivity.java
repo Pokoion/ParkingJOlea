@@ -80,11 +80,11 @@ public class LoginActivity extends AppCompatActivity {
     private boolean validateLoginInputs(String email, String password) {
         boolean isValid = true;
         if (email.isEmpty()) {
-            binding.email.setError(getString(R.string.email_required));
+            binding.email.setError("Hace falta el email");
             isValid = false;
         }
         if (password.isEmpty()) {
-            binding.password.setError(getString(R.string.password_required));
+            binding.password.setError("Hace falta la contraseña");
             isValid = false;
         }
         return isValid;
@@ -94,28 +94,28 @@ public class LoginActivity extends AppCompatActivity {
         switch (error) {
             case INVALID_CREDENTIALS:
                 // Show error at password field
-                binding.password.setError(getString(R.string.invalid_credentials));
+                binding.password.setError("Credenciales inválidas");
                 break;
 
             case EMPTY_FIELDS:
                 // This should be caught by client-side validation already
                 if (binding.emailText.getText().toString().isEmpty()) {
-                    binding.email.setError(getString(R.string.email_required));
+                    binding.email.setError("Hace falta el email");
                 }
                 if (binding.passwordText.getText().toString().isEmpty()) {
-                    binding.password.setError(getString(R.string.password_required));
+                    binding.password.setError("Hace falta la contraseña");
                 }
                 break;
 
             case NETWORK_ERROR:
                 Snackbar.make(binding.getRoot(),
-                        getString(R.string.network_error),
+                        "Error de red. Por favor, comprueba tu conexión.",
                         Snackbar.LENGTH_LONG).show();
                 break;
 
             case APPLICATION_ERROR:
                 Snackbar.make(binding.getRoot(),
-                        getString(R.string.app_initialization_error),
+                        "Error en la aplicación. Por favor, inténtalo más tarde.",
                         Snackbar.LENGTH_LONG).show();
                 break;
         }

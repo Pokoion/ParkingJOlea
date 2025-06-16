@@ -52,7 +52,7 @@ public class UserPreferencesManager {
 
     public void clearUserData() {
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.clear(); // Borra todas las preferencias del usuario
+        editor.clear();
         editor.apply();
     }
 

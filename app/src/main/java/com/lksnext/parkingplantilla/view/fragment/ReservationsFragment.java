@@ -55,7 +55,7 @@ public class ReservationsFragment extends Fragment {
 
         // Configurar TabLayout con ViewPager2
         new TabLayoutMediator(binding.tabLayout, binding.viewPager,
-                (tab, position) -> tab.setText(position == 0 ? "Current" : "Last 30 days")
+                (tab, position) -> tab.setText(position == 0 ? "Actuales" : "Últimos 30 días")
         ).attach();
     }
 

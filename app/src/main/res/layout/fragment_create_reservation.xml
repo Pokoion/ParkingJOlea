@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorBackground">
@@ -117,11 +118,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="El intervalo debe ser de máximo 7 horas"
+                android:text="El intervalo debe ser de máximo 9 horas"
                 android:textColor="@color/colorHint"
                 android:textSize="14sp"
                 android:textStyle="italic"
-                app:layout_constraintTop_toBottomOf="@id/timePickersLayout" />
+                app:layout_constraintTop_toBottomOf="@id/timePickersLayout"
+                tools:layout_editor_absoluteX="16dp" />
 
             <!-- Sección: Selección de Aparcamiento -->
             <TextView

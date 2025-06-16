@@ -11,6 +11,7 @@ import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.lksnext.parkingplantilla.R;
+import com.lksnext.parkingplantilla.domain.Plaza;
 
 import java.util.List;
 
@@ -64,13 +65,12 @@ public class ReservationTypeAdapter extends RecyclerView.Adapter<ReservationType
     }
 
     private String getIconName(String type) {
-        switch (type) {
-            case "Standard": return "ic_car";
-            case "Motorcycle": return "ic_motorcycle";
-            case "CV Charger": return "ic_cv_charger";
-            case "Disabled": return "ic_disabled";
-            default: return "ic_car";
-        }
+        return switch (type) {
+            case Plaza.TIPO_MOTORCYCLE -> "ic_motorcycle";
+            case Plaza.TIPO_CV_CHARGER -> "ic_cv_charger";
+            case Plaza.TIPO_DISABLED -> "ic_disabled";
+            default -> "ic_car";
+        };
     }
 
     @Override

@@ -16,7 +16,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Already a member? Login"
+            android:text="Ya eres miembro? Entra"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.496"
             app:layout_constraintStart_toStartOf="parent"
@@ -48,7 +48,7 @@
             android:layout_width="280dp"
             android:layout_height="80dp"
             android:layout_marginTop="32dp"
-            android:hint="User"
+            android:hint="Usuario"
             android:inputType="text"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -59,8 +59,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:scrollHorizontally="true"
-                android:singleLine="true"
-                />
+                android:singleLine="true" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -69,7 +68,7 @@
             android:layout_width="280dp"
             android:layout_height="80dp"
             android:layout_marginTop="32dp"
-            android:hint="Password"
+            android:hint="Contraseña"
             android:inputType="textEmailAddress"
             app:endIconMode="password_toggle"
             app:errorEnabled="true"
@@ -91,7 +90,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="create an account"
+            android:text="crea una cuenta"
             android:textSize="14sp"
             android:textStyle="normal"
             app:layout_constraintEnd_toEndOf="parent"
@@ -103,7 +102,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="96dp"
-            android:text="Get Started"
+            android:text="Registro"
             android:textSize="35sp"
             android:textStyle="normal"
             app:layout_constraintEnd_toEndOf="parent"
@@ -116,7 +115,7 @@
             android:layout_width="212dp"
             android:layout_height="67dp"
             android:layout_marginTop="16dp"
-            android:text="Next"
+            android:text="Siguiente"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.497"
             app:layout_constraintStart_toStartOf="parent"
