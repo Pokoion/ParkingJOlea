@@ -56,19 +56,19 @@ public class DataRepository {
         });
     }
 
-    public void register(String name, String email, String password, Callback callback) {
+    public void register(String name, String email, String password, DataCallback<User> callback) {
         dataSource.register(name, email, password, new DataCallback<User>() {
             @Override
             public void onSuccess(User user) {
                 // Save the registered user
                 preferencesManager.saveUser(user);
                 preferencesManager.setLoggedIn(true);
-                callback.onSuccess();
+                callback.onSuccess(user);
             }
 
             @Override
             public void onFailure(Exception e) {
-                callback.onFailure();
+                callback.onFailure(e);
             }
         });
     }

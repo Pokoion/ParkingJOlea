@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.lksnext.parkingplantilla">
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <application
         android:name=".ParkingApplication"
         android:allowBackup="true"
@@ -28,7 +30,5 @@
             android:name=".view.activity.MainActivity"
             android:exported="true" />
     </application>
-
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
 </manifest>

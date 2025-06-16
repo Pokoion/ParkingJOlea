@@ -1,0 +1,326 @@
+package com.lksnext.parkingplantilla.data.firebase;
+
+import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.lksnext.parkingplantilla.data.repository.DataSource;
+import com.lksnext.parkingplantilla.domain.DataCallback;
+import com.lksnext.parkingplantilla.domain.Hora;
+import com.lksnext.parkingplantilla.domain.Plaza;
+import com.lksnext.parkingplantilla.domain.Reserva;
+import com.lksnext.parkingplantilla.domain.User;
+
+import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class FirebaseDataSource implements DataSource {
+    private final FirebaseAuth mAuth;
+    private final FirebaseFirestore db;
+
+    public FirebaseDataSource() {
+        mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+    }
+
+    @Override
+    public void login(String email, String password, DataCallback<User> callback) {
+        Log.d("Tomcat", "[LOGIN] Intentando login para: " + email);
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("Tomcat", "[LOGIN] Login exitoso para: " + email);
+                        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                        if (firebaseUser != null) {
+                            db.collection("users").document(firebaseUser.getEmail())
+                                    .get().addOnSuccessListener(documentSnapshot -> {
+                                        if (documentSnapshot.exists()) {
+                                            String name = documentSnapshot.getString("name");
+                                            Log.d("Tomcat", "[LOGIN] Usuario encontrado en Firestore: " + name);
+                                            callback.onSuccess(new User(name, firebaseUser.getEmail(), null));
+                                        } else {
+                                            Log.d("Tomcat", "[LOGIN] Usuario no tiene datos adicionales en Firestore");
+                                            callback.onSuccess(new User(firebaseUser.getEmail(), firebaseUser.getEmail(), null));
+                                        }
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e("Tomcat", "[LOGIN][ERROR] Error obteniendo datos de usuario: " + e.getMessage());
+                                        callback.onFailure(e);
+                                    });
+                        } else {
+                            Log.e("Tomcat", "[LOGIN][ERROR] Usuario Firebase es null");
+                            callback.onFailure(new Exception("Usuario no encontrado"));
+                        }
+                    } else {
+                        Log.e("Tomcat", "[LOGIN][ERROR] Error de login: " + (task.getException() != null ? task.getException().getMessage() : "Desconocido"));
+                        callback.onFailure(task.getException());
+                    }
+                });
+    }
+
+    @Override
+    public void register(String name, String email, String password, DataCallback<User> callback) {
+        Log.d("Tomcat", "[REGISTER] Intentando registrar usuario: " + email);
+        mAuth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("Tomcat", "[REGISTER] Registro exitoso para: " + email);
+                        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                        if (firebaseUser != null) {
+                            Map<String, Object> userMap = new HashMap<>();
+                            userMap.put("name", name);
+                            userMap.put("email", email);
+                            db.collection("users").document(email).set(userMap)
+                                    .addOnSuccessListener(aVoid -> {
+                                        Log.d("Tomcat", "[REGISTER] Datos adicionales guardados en Firestore para: " + email);
+                                        callback.onSuccess(new User(name, email, null));
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e("Tomcat", "[REGISTER][ERROR] Error guardando datos en Firestore: " + e.getMessage());
+                                        callback.onFailure(e);
+                                    });
+                        } else {
+                            Log.e("Tomcat", "[REGISTER][ERROR] Usuario Firebase es null tras registro");
+                            callback.onFailure(new Exception("Error al crear usuario"));
+                        }
+                    } else {
+                        Log.e("Tomcat", "[REGISTER][ERROR] Error de registro: " + (task.getException() != null ? task.getException().getMessage() : "Desconocido"));
+                        callback.onFailure(task.getException());
+                    }
+                });
+    }
+
+    @Override
+    public void getReservations(String userId, DataCallback<List<Reserva>> callback) {
+        db.collection("reservas")
+                .whereEqualTo("usuario", userId)
+                .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Reserva> reservas = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        Reserva reserva = doc.toObject(Reserva.class);
+                        reservas.add(reserva);
+                    }
+                    callback.onSuccess(reservas);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void getHistoricReservations(String userId, DataCallback<List<Reserva>> callback) {
+        db.collection("reservas")
+                .whereEqualTo("usuario", userId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Reserva> historic = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        Reserva reserva = doc.toObject(Reserva.class);
+                        if ((reserva.getEstado() == Reserva.Estado.FINALIZADA || reserva.getEstado() == Reserva.Estado.CANCELADA)) {
+                            historic.add(reserva);
+                        }
+                    }
+                    callback.onSuccess(historic);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void getCurrentReservation(String userId, DataCallback<Reserva> callback) {
+        db.collection("reservas")
+                .whereEqualTo("usuario", userId)
+                .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    Reserva current = null;
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        Reserva reserva = doc.toObject(Reserva.class);
+                        // Aquí puedes agregar lógica para filtrar la reserva actual según la hora
+                        current = reserva;
+                        break;
+                    }
+                    callback.onSuccess(current);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void getNextReservation(String userId, DataCallback<Reserva> callback) {
+        db.collection("reservas")
+                .whereEqualTo("usuario", userId)
+                .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    Reserva next = null;
+                    long minStart = Long.MAX_VALUE;
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        Reserva reserva = doc.toObject(Reserva.class);
+                        if (reserva.getHora().getHoraInicio() < minStart) {
+                            minStart = reserva.getHora().getHoraInicio();
+                            next = reserva;
+                        }
+                    }
+                    callback.onSuccess(next);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void deleteReservation(String reservationId, DataCallback<Boolean> callback) {
+        db.collection("reservas").document(reservationId)
+                .update("estado", Reserva.Estado.CANCELADA.name())
+                .addOnSuccessListener(aVoid -> callback.onSuccess(true))
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void updateReservation(Reserva reserva, DataCallback<Boolean> callback) {
+        db.collection("reservas").document(reserva.getId())
+                .set(reserva)
+                .addOnSuccessListener(aVoid -> callback.onSuccess(true))
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
+        String id = db.collection("reservas").document().getId();
+        reserva.setId(id);
+        db.collection("reservas").document(id)
+                .set(reserva)
+                .addOnSuccessListener(aVoid -> callback.onSuccess(true))
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
+        db.collection("plazas")
+                .whereEqualTo("tipo", tipo)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<String> disponibles = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        Plaza plaza = doc.toObject(Plaza.class);
+                        disponibles.add(plaza.getId());
+                    }
+                    // Ahora filtrar por reservas activas en ese horario
+                    db.collection("reservas")
+                            .whereEqualTo("fecha", fecha)
+                            .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+                            .get()
+                            .addOnSuccessListener(reservasSnap -> {
+                                List<String> ocupadas = new ArrayList<>();
+                                for (QueryDocumentSnapshot rdoc : reservasSnap) {
+                                    Reserva r = rdoc.toObject(Reserva.class);
+                                    if (r.getHora().getHoraInicio() < horaFin && r.getHora().getHoraFin() > horaInicio) {
+                                        ocupadas.add(r.getPlaza().getId());
+                                    }
+                                }
+                                disponibles.removeAll(ocupadas);
+                                callback.onSuccess(disponibles);
+                            })
+                            .addOnFailureListener(callback::onFailure);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<String> callback) {
+        getAvailablePlazas(tipo, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> disponibles) {
+                if (disponibles.isEmpty()) {
+                    callback.onSuccess(null);
+                } else {
+                    int idx = (int) (Math.random() * disponibles.size());
+                    callback.onSuccess(disponibles.get(idx));
+                }
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
+    }
+
+    @Override
+    public void checkAvailability(Reserva reserva, DataCallback<Boolean> callback) {
+        db.collection("reservas")
+                .whereEqualTo("plaza.id", reserva.getPlaza().getId())
+                .whereEqualTo("fecha", reserva.getFecha())
+                .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    boolean available = true;
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        Reserva r = doc.toObject(Reserva.class);
+                        if (r.getHora().getHoraInicio() < reserva.getHora().getHoraFin() && r.getHora().getHoraFin() > reserva.getHora().getHoraInicio()) {
+                            available = false;
+                            break;
+                        }
+                    }
+                    callback.onSuccess(available);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void hasReservationOnDate(String userId, String date, DataCallback<Boolean> callback) {
+        db.collection("reservas")
+                .whereEqualTo("usuario", userId)
+                .whereEqualTo("fecha", date)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    boolean has = !queryDocumentSnapshots.isEmpty();
+                    callback.onSuccess(has);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
+        db.collection("plazas")
+                .whereEqualTo("tipo", tipo)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<String> disponibles = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                        Plaza plaza = doc.toObject(Plaza.class);
+                        if (plaza.getId().startsWith(row + "-")) {
+                            disponibles.add(plaza.getId().split("-")[1]);
+                        }
+                    }
+                    // Filtrar por reservas activas
+                    db.collection("reservas")
+                            .whereEqualTo("fecha", fecha)
+                            .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+                            .get()
+                            .addOnSuccessListener(reservasSnap -> {
+                                List<String> ocupadas = new ArrayList<>();
+                                for (QueryDocumentSnapshot rdoc : reservasSnap) {
+                                    Reserva r = rdoc.toObject(Reserva.class);
+                                    if (r.getPlaza().getId().startsWith(row + "-") && r.getHora().getHoraInicio() < horaFin && r.getHora().getHoraFin() > horaInicio) {
+                                        ocupadas.add(r.getPlaza().getId().split("-")[1]);
+                                    }
+                                }
+                                disponibles.removeAll(ocupadas);
+                                callback.onSuccess(disponibles);
+                            })
+                            .addOnFailureListener(callback::onFailure);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+}
+

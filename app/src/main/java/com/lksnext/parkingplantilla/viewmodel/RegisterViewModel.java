@@ -6,7 +6,8 @@ import androidx.lifecycle.ViewModel;
 
 import com.lksnext.parkingplantilla.ParkingApplication;
 import com.lksnext.parkingplantilla.data.DataRepository;
-import com.lksnext.parkingplantilla.domain.Callback;
+import com.lksnext.parkingplantilla.domain.DataCallback;
+import com.lksnext.parkingplantilla.domain.User;
 import com.lksnext.parkingplantilla.utils.Validators;
 
 public class RegisterViewModel extends ViewModel {
@@ -46,17 +47,26 @@ public class RegisterViewModel extends ViewModel {
         registerError.setValue(RegisterError.NONE);
         if (!validateRegisterFields(email, username, password)) return;
         isRegistering.setValue(true);
-        repository.register(username, email, password, new Callback() {
+        repository.register(username, email, password, new DataCallback<User>() {
             @Override
-            public void onSuccess() {
+            public void onSuccess(User user) {
                 isRegistering.postValue(false);
                 registrationSuccess.postValue(true);
             }
 
             @Override
-            public void onFailure() {
+            public void onFailure(Exception e) {
                 isRegistering.postValue(false);
-                registerError.postValue(RegisterError.EMAIL_ALREADY_EXISTS);
+                RegisterError error = RegisterError.APPLICATION_ERROR;
+                if (e != null && e.getMessage() != null) {
+                    String msg = e.getMessage().toLowerCase();
+                    if (msg.contains("already") || msg.contains("existe") || msg.contains("in use")) {
+                        error = RegisterError.EMAIL_ALREADY_EXISTS;
+                    } else if (msg.contains("network")) {
+                        error = RegisterError.NETWORK_ERROR;
+                    }
+                }
+                registerError.postValue(error);
             }
         });
     }

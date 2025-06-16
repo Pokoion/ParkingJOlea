@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatDelegate;
 
 import com.lksnext.parkingplantilla.data.DataRepository;
 import com.lksnext.parkingplantilla.data.local.LocalDataSource;
+import com.lksnext.parkingplantilla.data.firebase.FirebaseDataSource;
 import com.lksnext.parkingplantilla.data.repository.DataSource;
 import com.lksnext.parkingplantilla.viewmodel.UserViewModel;
 
@@ -27,7 +28,8 @@ public class ParkingApplication extends Application {
         applyStoredTheme();
 
         // Initialize the data source
-        DataSource dataSource = new LocalDataSource();
+        // DataSource dataSource = new LocalDataSource();
+        DataSource dataSource = new FirebaseDataSource();
 
         // Initialize repository with the data source
         repository = DataRepository.getInstance(dataSource, getApplicationContext());

@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "315841506138",
-    "project_id": "parkingupinedo",
-    "storage_bucket": "parkingupinedo.appspot.com"
+    "project_number": "101567262528",
+    "project_id": "parkingjolea",
+    "storage_bucket": "parkingjolea.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:315841506138:android:f0bf95521ba99696c5e163",
+        "mobilesdk_app_id": "1:101567262528:android:81d8bca9a28cb9257cd4a5",
         "android_client_info": {
-          "package_name": "com.lksnext.parkingupinedo"
+          "package_name": "com.lksnext.parkingplantilla"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "315841506138-k1um87oi2pieknfpdq46jl89pjj6phpf.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBctHfzFJSw3yZDDtRuzKVf9WthYkw74qM"
+          "current_key": "AIzaSyCVU9RItSg-x-V4wV_T2xom31T4ucqGpSg"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "315841506138-k1um87oi2pieknfpdq46jl89pjj6phpf.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
