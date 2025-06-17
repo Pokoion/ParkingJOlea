@@ -38,34 +38,27 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void login(String email, String password, DataCallback<User> callback) {
-        Log.d("Tomcat", "[LOGIN] Intentando login para: " + email);
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        Log.d("Tomcat", "[LOGIN] Login exitoso para: " + email);
                         FirebaseUser firebaseUser = mAuth.getCurrentUser();
                         if (firebaseUser != null) {
                             db.collection("users").document(firebaseUser.getEmail())
                                     .get().addOnSuccessListener(documentSnapshot -> {
                                         if (documentSnapshot.exists()) {
                                             String name = documentSnapshot.getString("name");
-                                            Log.d("Tomcat", "[LOGIN] Usuario encontrado en Firestore: " + name);
                                             callback.onSuccess(new User(name, firebaseUser.getEmail(), null));
                                         } else {
-                                            Log.d("Tomcat", "[LOGIN] Usuario no tiene datos adicionales en Firestore");
                                             callback.onSuccess(new User(firebaseUser.getEmail(), firebaseUser.getEmail(), null));
                                         }
                                     })
                                     .addOnFailureListener(e -> {
-                                        Log.e("Tomcat", "[LOGIN][ERROR] Error obteniendo datos de usuario: " + e.getMessage());
                                         callback.onFailure(e);
                                     });
                         } else {
-                            Log.e("Tomcat", "[LOGIN][ERROR] Usuario Firebase es null");
                             callback.onFailure(new Exception("Usuario no encontrado"));
                         }
                     } else {
-                        Log.e("Tomcat", "[LOGIN][ERROR] Error de login: " + (task.getException() != null ? task.getException().getMessage() : "Desconocido"));
                         callback.onFailure(task.getException());
                     }
                 });
@@ -73,11 +66,9 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void register(String name, String email, String password, DataCallback<User> callback) {
-        Log.d("Tomcat", "[REGISTER] Intentando registrar usuario: " + email);
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        Log.d("Tomcat", "[REGISTER] Registro exitoso para: " + email);
                         FirebaseUser firebaseUser = mAuth.getCurrentUser();
                         if (firebaseUser != null) {
                             Map<String, Object> userMap = new HashMap<>();
@@ -85,19 +76,15 @@ public class FirebaseDataSource implements DataSource {
                             userMap.put("email", email);
                             db.collection("users").document(email).set(userMap)
                                     .addOnSuccessListener(aVoid -> {
-                                        Log.d("Tomcat", "[REGISTER] Datos adicionales guardados en Firestore para: " + email);
                                         callback.onSuccess(new User(name, email, null));
                                     })
                                     .addOnFailureListener(e -> {
-                                        Log.e("Tomcat", "[REGISTER][ERROR] Error guardando datos en Firestore: " + e.getMessage());
                                         callback.onFailure(e);
                                     });
                         } else {
-                            Log.e("Tomcat", "[REGISTER][ERROR] Usuario Firebase es null tras registro");
                             callback.onFailure(new Exception("Error al crear usuario"));
                         }
                     } else {
-                        Log.e("Tomcat", "[REGISTER][ERROR] Error de registro: " + (task.getException() != null ? task.getException().getMessage() : "Desconocido"));
                         callback.onFailure(task.getException());
                     }
                 });
@@ -321,6 +308,15 @@ public class FirebaseDataSource implements DataSource {
                             .addOnFailureListener(callback::onFailure);
                 })
                 .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void checkUserExists(String email, DataCallback<Boolean> callback) {
+        db.collection("users").document(email).get()
+            .addOnSuccessListener(documentSnapshot -> {
+                callback.onSuccess(documentSnapshot.exists());
+            })
+            .addOnFailureListener(callback::onFailure);
     }
 }
 

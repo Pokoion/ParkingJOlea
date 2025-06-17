@@ -435,8 +435,9 @@ public class ReservationsViewModel extends ViewModel {
             @Override
             public void onSuccess(List<Reserva> result) {
                 for (Reserva reserva : result) {
-                    // Solo considerar reservas futuras o actuales
-                    if (!DateUtils.isHistoricReservation(reserva)) {
+                    // Solo considerar reservas futuras o actuales que NO estén canceladas
+                    if (!DateUtils.isHistoricReservation(reserva)
+                        && reserva.getEstado() != Reserva.Estado.CANCELADA) {
                         dates.add(reserva.getFecha());
                     }
                 }

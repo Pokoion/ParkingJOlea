@@ -2,6 +2,7 @@ package com.lksnext.parkingplantilla.domain;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.google.firebase.firestore.Exclude;
 
 public class Plaza {
 
@@ -52,7 +53,9 @@ public class Plaza {
         this.id = id;
     }
 
+    @Exclude
     public String getImageResource() {
         return TIPO_IMAGES.getOrDefault(tipo, "ic_car");
     }
 }
+

@@ -512,4 +512,9 @@ public class LocalDataSource implements DataSource {
         }
         callback.onSuccess(disponibles);
     }
+    @Override
+    public void checkUserExists(String email, DataCallback<Boolean> callback) {
+        boolean exists = fakeDatabase.containsKey(email);
+        callback.onSuccess(exists);
+    }
 }

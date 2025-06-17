@@ -1,5 +1,6 @@
 package com.lksnext.parkingplantilla.view.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,6 +13,7 @@ import androidx.navigation.ui.NavigationUI;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.lksnext.parkingplantilla.R;
 import com.lksnext.parkingplantilla.databinding.ActivityMainBinding;
+import com.lksnext.parkingplantilla.viewmodel.LoginViewModel;
 import com.lksnext.parkingplantilla.viewmodel.MainViewModel;
 
 public class MainActivity extends AppCompatActivity {
@@ -65,6 +67,14 @@ public class MainActivity extends AppCompatActivity {
         // Inicializamos el ViewModel
         mainViewModel = new ViewModelProvider(this).get(MainViewModel.class);
 
+        // Comprobamos si el usuario existe en la base de datos
+        mainViewModel.checkCurrentUserExists();
+        mainViewModel.getUserExists().observe(this, exists -> {
+            if (exists != null && !exists) {
+                mainViewModel.logoutAndRedirectToLogin(this);
+            }
+        });
+
         // Observamos el usuario actual desde el ViewModel
         mainViewModel.getCurrentUser().observe(this, user -> {
             if (user != null) {
@@ -80,3 +90,4 @@ public class MainActivity extends AppCompatActivity {
         return NavigationUI.navigateUp(navController, appBarConfiguration) || super.onSupportNavigateUp();
     }
 }
+

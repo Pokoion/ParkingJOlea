@@ -580,11 +580,9 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
                 continueWithSaveProcessRandom(plazaId);
                 // Limpiar el valor para evitar ejecuciones automáticas
                 viewModel.clearRandomPlaza();
-            }
-            // No mostrar mensaje si plazaId es null y el loading está oculto (ya se consumió)
-            else if (binding.loadingIndicator.getVisibility() == View.VISIBLE) {
+            } else if (viewModel.getIsLoading().getValue() != null && !viewModel.getIsLoading().getValue()) {
+                // Solo mostrar el error si no está cargando y el valor es null
                 Toast.makeText(requireContext(), "No se pudo asignar una plaza aleatoria", Toast.LENGTH_SHORT).show();
-                binding.loadingIndicator.setVisibility(View.GONE);
             }
         });
         viewModel.getIsLoading().observe(getViewLifecycleOwner(), loading -> {

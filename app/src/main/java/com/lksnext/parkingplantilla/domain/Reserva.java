@@ -1,5 +1,7 @@
 package com.lksnext.parkingplantilla.domain;
 
+import com.google.firebase.firestore.Exclude;
+
 public class Reserva {
     public enum Estado {
         ACTIVA,
@@ -75,6 +77,7 @@ public class Reserva {
         this.estado = estado;
     }
 
+    @Exclude
     public String getEstadoString() {
         if (estado == null) return "";
         String name = estado.name().toLowerCase();

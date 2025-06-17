@@ -29,4 +29,5 @@ public interface DataSource {
 
     // Números disponibles en una fila concreta
     void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback);
+    void checkUserExists(String email, DataCallback<Boolean> callback);
 }
