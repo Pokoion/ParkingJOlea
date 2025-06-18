@@ -318,5 +318,54 @@ public class FirebaseDataSource implements DataSource {
             })
             .addOnFailureListener(callback::onFailure);
     }
-}
 
+    @Override
+    public void sendPasswordResetEmail(String email, DataCallback<Boolean> callback) {
+        mAuth.sendPasswordResetEmail(email)
+            .addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    callback.onSuccess(true);
+                } else {
+                    // Si el error es que el usuario no existe, devolver false, si no, onFailure
+                    Exception e = task.getException();
+                    if (e != null && e.getMessage() != null && e.getMessage().toLowerCase().contains("no user record")) {
+                        callback.onSuccess(false);
+                    } else {
+                        callback.onFailure(e);
+                    }
+                }
+            });
+    }
+
+    @Override
+    public void deleteUserReservations(String email, DataCallback<Boolean> callback) {
+        db.collection("reservas")
+            .whereEqualTo("usuario", email)
+            .get()
+            .addOnSuccessListener(queryDocumentSnapshots -> {
+                for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                    doc.getReference().delete();
+                }
+                callback.onSuccess(true);
+            })
+            .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void deleteUser(String email, DataCallback<Boolean> callback) {
+        db.collection("users").document(email).delete()
+            .addOnSuccessListener(aVoid -> {
+                deleteUserReservations(email, new DataCallback<Boolean>() {
+                    @Override
+                    public void onSuccess(Boolean result) {
+                        callback.onSuccess(true);
+                    }
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
+            })
+            .addOnFailureListener(callback::onFailure);
+    }
+}

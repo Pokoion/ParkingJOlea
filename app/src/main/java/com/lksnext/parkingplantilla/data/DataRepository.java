@@ -120,4 +120,8 @@ public class DataRepository {
     public void checkUserExists(String email, DataCallback<Boolean> callback) {
         dataSource.checkUserExists(email, callback);
     }
+
+    public void sendPasswordResetEmail(String email, DataCallback<Boolean> callback) {
+        dataSource.sendPasswordResetEmail(email, callback);
+    }
 }

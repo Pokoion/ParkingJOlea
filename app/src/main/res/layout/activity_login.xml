@@ -115,13 +115,14 @@
     <Button
         android:id="@+id/forgotPassButton"
         style="?attr/materialButtonOutlinedStyle"
-        android:layout_width="117dp"
-        android:layout_height="54dp"
-        android:layout_marginTop="32dp"
-        android:text="Forgot Password?"
-        android:textSize="8sp"
-        app:layout_constraintEnd_toEndOf="@+id/password"
-        app:layout_constraintTop_toBottomOf="@+id/password" />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="¿Olvidaste tu contraseña?"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/createAccountButton" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+

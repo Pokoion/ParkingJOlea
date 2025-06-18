@@ -385,6 +385,38 @@ public class LocalDataSource implements DataSource {
         callback.onSuccess(true);
     }
 
+    @Override
+    public void deleteUserReservations(String email, DataCallback<Boolean> callback) {
+        boolean reservasRemoved = false;
+        List<Reserva> userReservas = reservasPorUsuario.get(email);
+        if (userReservas != null) {
+            todasReservas.removeIf(r -> r.getUsuario().equals(email));
+            reservasPorUsuario.remove(email);
+            reservasRemoved = true;
+        }
+        callback.onSuccess(reservasRemoved);
+    }
+
+    @Override
+    public void deleteUser(String email, DataCallback<Boolean> callback) {
+        final boolean[] userRemoved = {false};
+        if (fakeDatabase.containsKey(email)) {
+            fakeDatabase.remove(email);
+            userRemoved[0] = true;
+        }
+        // Eliminar reservas asociadas usando el método separado
+        deleteUserReservations(email, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean reservasRemoved) {
+                callback.onSuccess(userRemoved[0] || reservasRemoved);
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
+    }
+
     private Map<String, List<Reserva>> getReservasPorPlaza(String fecha, long horaInicio, long horaFin, String tipo) {
         Map<String, List<Reserva>> mapa = new HashMap<>();
         for (Plaza plaza : plazas) {
@@ -512,9 +544,29 @@ public class LocalDataSource implements DataSource {
         }
         callback.onSuccess(disponibles);
     }
+
     @Override
     public void checkUserExists(String email, DataCallback<Boolean> callback) {
         boolean exists = fakeDatabase.containsKey(email);
         callback.onSuccess(exists);
+    }
+
+    @Override
+    public void sendPasswordResetEmail(String email, DataCallback<Boolean> callback) {
+        checkUserExists(email, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean exists) {
+                if (exists) {
+                    // Simula el envío de email
+                    callback.onSuccess(true);
+                } else {
+                    callback.onSuccess(false);
+                }
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
     }
 }
