@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel;
 import com.lksnext.parkingplantilla.ParkingApplication;
 import com.lksnext.parkingplantilla.data.DataRepository;
 import com.lksnext.parkingplantilla.domain.Callback;
+import com.lksnext.parkingplantilla.domain.DataCallback;
 import com.lksnext.parkingplantilla.domain.User;
 import com.lksnext.parkingplantilla.utils.Validators;
 
@@ -54,15 +55,14 @@ public class LoginViewModel extends ViewModel {
 
         if (!validateLoginFields(email, password)) return;
 
-        repository.login(email, password, new Callback() {
+        repository.login(email, password, new DataCallback<User>() {
             @Override
-            public void onSuccess() {
+            public void onSuccess(User user) {
                 logged.setValue(true);
-                currentUserEmail.setValue(email);
+                currentUserEmail.setValue(user.getEmail());
             }
-
             @Override
-            public void onFailure() {
+            public void onFailure(Exception e) {
                 logged.setValue(false);
                 currentUserEmail.setValue(null);
                 loginError.setValue(LoginError.INVALID_CREDENTIALS);
@@ -90,3 +90,4 @@ public class LoginViewModel extends ViewModel {
         loginError.setValue(LoginError.NONE);
     }
 }
+

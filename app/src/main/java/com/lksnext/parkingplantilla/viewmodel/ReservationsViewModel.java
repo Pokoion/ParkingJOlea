@@ -33,6 +33,7 @@ public class ReservationsViewModel extends ViewModel {
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<String> randomPlaza = new MutableLiveData<>();
     private final MutableLiveData<List<String>> availableNumbers = new MutableLiveData<>();
+    private final MutableLiveData<List<String>> availableRows = new MutableLiveData<>();
 
     public ReservationsViewModel() {
         repository = ParkingApplication.getRepository();
@@ -73,6 +74,10 @@ public class ReservationsViewModel extends ViewModel {
 
     public LiveData<List<String>> getAvailableNumbers() {
         return availableNumbers;
+    }
+
+    public LiveData<List<String>> getAvailableRows() {
+        return availableRows;
     }
 
     /**
@@ -486,6 +491,24 @@ public class ReservationsViewModel extends ViewModel {
             public void onFailure(Exception e) {
                 error.postValue("Error al cargar números disponibles: " + e.getMessage());
                 availableNumbers.postValue(new ArrayList<>());
+                isLoading.setValue(false);
+            }
+        });
+    }
+
+    // NUEVO: Cargar filas disponibles
+    public void loadAvailableRows(String tipo) {
+        isLoading.setValue(true);
+        repository.getAvailableRows(tipo, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> result) {
+                availableRows.postValue(result);
+                isLoading.setValue(false);
+            }
+            @Override
+            public void onFailure(Exception e) {
+                error.postValue("Error al cargar filas disponibles: " + e.getMessage());
+                availableRows.postValue(new ArrayList<>());
                 isLoading.setValue(false);
             }
         });

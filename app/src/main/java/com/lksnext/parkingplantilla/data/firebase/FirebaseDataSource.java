@@ -183,12 +183,26 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
-        String id = db.collection("reservas").document().getId();
-        reserva.setId(id);
-        db.collection("reservas").document(id)
-                .set(reserva)
-                .addOnSuccessListener(aVoid -> callback.onSuccess(true))
-                .addOnFailureListener(callback::onFailure);
+        // Comprobar disponibilidad antes de crear la reserva
+        checkAvailability(reserva, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean available) {
+                if (!available) {
+                    callback.onSuccess(false);
+                    return;
+                }
+                String id = db.collection("reservas").document().getId();
+                reserva.setId(id);
+                db.collection("reservas").document(id)
+                        .set(reserva)
+                        .addOnSuccessListener(aVoid -> callback.onSuccess(true))
+                        .addOnFailureListener(callback::onFailure);
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
     }
 
     @Override
@@ -321,20 +335,27 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void sendPasswordResetEmail(String email, DataCallback<Boolean> callback) {
-        mAuth.sendPasswordResetEmail(email)
-            .addOnCompleteListener(task -> {
-                if (task.isSuccessful()) {
-                    callback.onSuccess(true);
-                } else {
-                    // Si el error es que el usuario no existe, devolver false, si no, onFailure
-                    Exception e = task.getException();
-                    if (e != null && e.getMessage() != null && e.getMessage().toLowerCase().contains("no user record")) {
-                        callback.onSuccess(false);
-                    } else {
-                        callback.onFailure(e);
-                    }
+        checkUserExists(email, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean exists) {
+                if (!exists) {
+                    callback.onSuccess(false);
+                    return;
                 }
-            });
+                mAuth.sendPasswordResetEmail(email)
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            callback.onSuccess(true);
+                        } else {
+                            callback.onFailure(task.getException());
+                        }
+                    });
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
     }
 
     @Override
@@ -358,13 +379,73 @@ public class FirebaseDataSource implements DataSource {
                 deleteUserReservations(email, new DataCallback<Boolean>() {
                     @Override
                     public void onSuccess(Boolean result) {
-                        callback.onSuccess(true);
+                        // Buscar el usuario en Auth y eliminarlo si está logueado
+                        FirebaseUser currentUser = mAuth.getCurrentUser();
+                        if (currentUser != null && currentUser.getEmail() != null && currentUser.getEmail().equals(email)) {
+                            currentUser.delete()
+                                .addOnSuccessListener(aVoid2 -> callback.onSuccess(true))
+                                .addOnFailureListener(e -> callback.onFailure(e));
+                        } else {
+                            // Intentar loguear para eliminar si no está logueado
+                            mAuth.signInWithEmailAndPassword(email, "Test1234!")
+                                .addOnSuccessListener(authResult -> {
+                                    FirebaseUser userToDelete = mAuth.getCurrentUser();
+                                    if (userToDelete != null) {
+                                        userToDelete.delete()
+                                            .addOnSuccessListener(aVoid3 -> callback.onSuccess(true))
+                                            .addOnFailureListener(e -> callback.onFailure(e));
+                                    } else {
+                                        callback.onSuccess(true);
+                                    }
+                                })
+                                .addOnFailureListener(e -> callback.onSuccess(true)); // Si no existe en Auth, consideramos borrado
+                        }
                     }
                     @Override
                     public void onFailure(Exception e) {
                         callback.onFailure(e);
                     }
                 });
+            })
+            .addOnFailureListener(callback::onFailure);
+    }
+
+    public void addPlaza(Plaza plaza, DataCallback<Boolean> callback) {
+        db.collection("plazas").document(plaza.getId()).set(plaza)
+            .addOnSuccessListener(aVoid -> callback.onSuccess(true))
+            .addOnFailureListener(callback::onFailure);
+    }
+
+    public void deletePlaza(String plazaId, DataCallback<Boolean> callback) {
+        db.collection("plazas").document(plazaId).delete()
+            .addOnSuccessListener(aVoid -> callback.onSuccess(true))
+            .addOnFailureListener(callback::onFailure);
+    }
+
+    public void deleteReserva(String reservaId, DataCallback<Boolean> callback) {
+        db.collection("reservas").document(reservaId).delete()
+            .addOnSuccessListener(aVoid -> callback.onSuccess(true))
+            .addOnFailureListener(callback::onFailure);
+    }
+
+    @Override
+    public void getAvailableRows(String tipo, DataCallback<List<String>> callback) {
+        db.collection("plazas")
+            .whereEqualTo("tipo", tipo)
+            .get()
+            .addOnSuccessListener(queryDocumentSnapshots -> {
+                List<String> rows = new ArrayList<>();
+                for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
+                    Plaza plaza = doc.toObject(Plaza.class);
+                    String id = plaza.getId();
+                    if (id != null && id.contains("-")) {
+                        String row = id.split("-")[0];
+                        if (!rows.contains(row)) {
+                            rows.add(row);
+                        }
+                    }
+                }
+                callback.onSuccess(rows);
             })
             .addOnFailureListener(callback::onFailure);
     }

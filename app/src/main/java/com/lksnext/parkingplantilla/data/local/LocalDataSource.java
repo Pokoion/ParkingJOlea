@@ -569,4 +569,73 @@ public class LocalDataSource implements DataSource {
             }
         });
     }
+
+    @Override
+    public void addPlaza(Plaza plaza, DataCallback<Boolean> callback) {
+        boolean exists = false;
+        for (Plaza p : plazas) {
+            if (p.getId().equals(plaza.getId())) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            plazas.add(plaza);
+            callback.onSuccess(true);
+        } else {
+            callback.onFailure(new Exception("La plaza ya existe"));
+        }
+    }
+
+    @Override
+    public void deletePlaza(String plazaId, DataCallback<Boolean> callback) {
+        Plaza toRemove = null;
+        for (Plaza p : plazas) {
+            if (p.getId().equals(plazaId)) {
+                toRemove = p;
+                break;
+            }
+        }
+        if (toRemove != null) {
+            plazas.remove(toRemove);
+            callback.onSuccess(true);
+        } else {
+            callback.onFailure(new Exception("Plaza no encontrada"));
+        }
+    }
+
+    @Override
+    public void deleteReserva(String reservaId, DataCallback<Boolean> callback) {
+        Reserva toRemove = null;
+        for (Reserva r : todasReservas) {
+            if (r.getId().equals(reservaId)) {
+                toRemove = r;
+                break;
+            }
+        }
+        if (toRemove != null) {
+            todasReservas.remove(toRemove);
+            List<Reserva> userReservas = reservasPorUsuario.get(toRemove.getUsuario());
+            if (userReservas != null) {
+                userReservas.removeIf(r -> r.getId().equals(reservaId));
+            }
+            callback.onSuccess(true);
+        } else {
+            callback.onFailure(new Exception("Reserva no encontrada"));
+        }
+    }
+
+    @Override
+    public void getAvailableRows(String tipo, DataCallback<List<String>> callback) {
+        List<String> rows = new ArrayList<>();
+        for (Plaza plaza : plazas) {
+            if (plaza.getTipo().equals(tipo) && plaza.getId() != null && plaza.getId().contains("-")) {
+                String row = plaza.getId().split("-")[0];
+                if (!rows.contains(row)) {
+                    rows.add(row);
+                }
+            }
+        }
+        callback.onSuccess(rows);
+    }
 }

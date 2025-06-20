@@ -5,6 +5,7 @@ import android.content.Context;
 import com.lksnext.parkingplantilla.data.repository.DataSource;
 import com.lksnext.parkingplantilla.domain.Callback;
 import com.lksnext.parkingplantilla.domain.DataCallback;
+import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.domain.Reserva;
 import com.lksnext.parkingplantilla.domain.User;
 
@@ -39,19 +40,22 @@ public class DataRepository {
         return preferencesManager.isUserLoggedIn();
     }
 
-    public void login(String email, String password, Callback callback) {
+    public void login(String email, String password, DataCallback<User> callback) {
+        if (isUserLoggedIn()) {
+            callback.onFailure(new IllegalStateException("Ya hay una sesión activa. Haz logout antes de iniciar sesión de nuevo."));
+            return;
+        }
         dataSource.login(email, password, new DataCallback<User>() {
             @Override
             public void onSuccess(User user) {
-                // Save the authenticated user
                 preferencesManager.saveUser(user);
                 preferencesManager.setLoggedIn(true);
-                callback.onSuccess();
+                callback.onSuccess(user);
             }
 
             @Override
             public void onFailure(Exception e) {
-                callback.onFailure();
+                callback.onFailure(e);
             }
         });
     }
@@ -117,11 +121,39 @@ public class DataRepository {
         dataSource.getAvailableNumbers(tipo, row, fecha, horaInicio, horaFin, callback);
     }
 
+    public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
+        dataSource.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, callback);
+    }
+
+    public void getAvailableRows(String tipo, DataCallback<List<String>> callback) {
+        dataSource.getAvailableRows(tipo, callback);
+    }
+
     public void checkUserExists(String email, DataCallback<Boolean> callback) {
         dataSource.checkUserExists(email, callback);
     }
 
     public void sendPasswordResetEmail(String email, DataCallback<Boolean> callback) {
         dataSource.sendPasswordResetEmail(email, callback);
+    }
+
+    public void addPlaza(Plaza plaza, DataCallback<Boolean> callback) {
+        dataSource.addPlaza(plaza, callback);
+    }
+
+    public void deletePlaza(String plazaId, DataCallback<Boolean> callback) {
+        dataSource.deletePlaza(plazaId, callback);
+    }
+
+    public void deleteReserva(String reservaId, DataCallback<Boolean> callback) {
+        dataSource.deleteReserva(reservaId, callback);
+    }
+
+    public void deleteUser(String email, DataCallback<Boolean> callback) {
+        dataSource.deleteUser(email, callback);
+    }
+
+    public void deleteUserReservations(String email, DataCallback<Boolean> callback) {
+        dataSource.deleteUserReservations(email, callback);
     }
 }

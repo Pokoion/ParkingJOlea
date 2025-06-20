@@ -28,8 +28,8 @@ public class ParkingApplication extends Application {
         applyStoredTheme();
 
         // Initialize the data source
-        DataSource dataSource = new LocalDataSource();
-        //DataSource dataSource = new FirebaseDataSource();
+        //DataSource dataSource = new LocalDataSource();
+        DataSource dataSource = new FirebaseDataSource();
 
         // Initialize repository with the data source
         repository = DataRepository.getInstance(dataSource, getApplicationContext());

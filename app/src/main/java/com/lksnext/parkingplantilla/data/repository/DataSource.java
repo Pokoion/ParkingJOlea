@@ -2,6 +2,7 @@ package com.lksnext.parkingplantilla.data.repository;
 
 import com.lksnext.parkingplantilla.domain.Callback;
 import com.lksnext.parkingplantilla.domain.DataCallback;
+import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.domain.Reserva;
 import com.lksnext.parkingplantilla.domain.User;
 
@@ -28,9 +29,13 @@ public interface DataSource {
     // Plaza-related methods
     void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback);
     void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<String> callback);
+    void addPlaza(Plaza plaza, DataCallback<Boolean> callback);
+    void deletePlaza(String plazaId, DataCallback<Boolean> callback);
+    void deleteReserva(String reservaId, DataCallback<Boolean> callback);
 
     // Números disponibles en una fila concreta
     void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback);
     void checkUserExists(String email, DataCallback<Boolean> callback);
     void sendPasswordResetEmail(String email, DataCallback<Boolean> callback);
+    void getAvailableRows(String tipo, DataCallback<List<String>> callback);
 }
