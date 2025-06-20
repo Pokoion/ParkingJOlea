@@ -10,7 +10,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavController;
 
+import com.lksnext.parkingplantilla.R;
 import com.lksnext.parkingplantilla.databinding.CardReservationNowBinding;
 import com.lksnext.parkingplantilla.databinding.CardReservationNextBinding;
 import com.lksnext.parkingplantilla.databinding.FragmentHomeBinding;
@@ -71,12 +73,9 @@ public class HomeFragment extends Fragment {
 
         // Configurar FAB para crear nueva reserva
         binding.createReservationButton.setOnClickListener(v -> {
-            // Abrir el nuevo fragmento en vez de la Activity
-            requireActivity().getSupportFragmentManager()
-                .beginTransaction()
-                .replace(android.R.id.content, new CreateReservationFragment())
-                .addToBackStack(null)
-                .commit();
+            // Navegación con Navigation Component
+            NavController navController = androidx.navigation.Navigation.findNavController(requireActivity(), R.id.flFragment);
+            navController.navigate(R.id.createReservationFragment);
         });
 
         // Cargar datos

@@ -35,6 +35,13 @@ public class ReservationsViewModel extends ViewModel {
     private final MutableLiveData<List<String>> availableNumbers = new MutableLiveData<>();
     private final MutableLiveData<List<String>> availableRows = new MutableLiveData<>();
 
+    // Variables para guardar selección temporal
+    private String tempSelectedType;
+    private Calendar tempSelectedDate;
+    private Calendar tempStartTime;
+    private Calendar tempEndTime;
+    private String tempReservationId;
+
     public ReservationsViewModel() {
         repository = ParkingApplication.getRepository();
     }
@@ -78,6 +85,43 @@ public class ReservationsViewModel extends ViewModel {
 
     public LiveData<List<String>> getAvailableRows() {
         return availableRows;
+    }
+
+    // Métodos para guardar y restaurar selección
+    public void saveTempSelection(String type, Calendar date, Calendar start, Calendar end, String reservationId) {
+        this.tempSelectedType = type;
+        this.tempSelectedDate = (date != null) ? (Calendar) date.clone() : null;
+        this.tempStartTime = (start != null) ? (Calendar) start.clone() : null;
+        this.tempEndTime = (end != null) ? (Calendar) end.clone() : null;
+        this.tempReservationId = reservationId;
+    }
+
+    public String getTempSelectedType() {
+        return tempSelectedType;
+    }
+
+    public Calendar getTempSelectedDate() {
+        return tempSelectedDate;
+    }
+
+    public Calendar getTempStartTime() {
+        return tempStartTime;
+    }
+
+    public Calendar getTempEndTime() {
+        return tempEndTime;
+    }
+
+    public String getTempReservationId() {
+        return tempReservationId;
+    }
+
+    public void clearTempSelection() {
+        tempSelectedType = null;
+        tempSelectedDate = null;
+        tempStartTime = null;
+        tempEndTime = null;
+        tempReservationId = null;
     }
 
     /**
@@ -512,6 +556,26 @@ public class ReservationsViewModel extends ViewModel {
                 isLoading.setValue(false);
             }
         });
+    }
+
+    // NUEVO: Obtener plazas disponibles para tipo, fecha y horas
+    public LiveData<List<String>> getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin) {
+        MutableLiveData<List<String>> result = new MutableLiveData<>();
+        isLoading.setValue(true);
+        repository.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> plazas) {
+                result.postValue(plazas);
+                isLoading.postValue(false);
+            }
+            @Override
+            public void onFailure(Exception e) {
+                error.postValue("Error al consultar plazas disponibles: " + e.getMessage());
+                result.postValue(new ArrayList<>());
+                isLoading.postValue(false);
+            }
+        });
+        return result;
     }
 
 }

@@ -90,9 +90,9 @@ public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapte
         }
 
         private void openEditReservationActivity(Context context, Reserva reserva) {
-            // Abrir el fragmento en vez de la Activity
+            // Navegación con Navigation Component
             FragmentActivity activity = (FragmentActivity) context;
-            CreateReservationFragment fragment = new CreateReservationFragment();
+            androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(activity, R.id.flFragment);
             android.os.Bundle args = new android.os.Bundle();
             args.putBoolean("EDIT_MODE", true);
             args.putString("RESERVATION_ID", reserva.getId());
@@ -101,12 +101,7 @@ public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapte
             args.putLong("RESERVATION_START_TIME", reserva.getHora().getHoraInicio());
             args.putLong("RESERVATION_END_TIME", reserva.getHora().getHoraFin());
             args.putString("RESERVATION_SPOT", reserva.getPlaza().getId());
-            fragment.setArguments(args);
-            activity.getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(android.R.id.content, fragment)
-                    .addToBackStack(null)
-                    .commit();
+            navController.navigate(R.id.createReservationFragment, args);
         }
 
         public void bind(Reserva reserva) {
