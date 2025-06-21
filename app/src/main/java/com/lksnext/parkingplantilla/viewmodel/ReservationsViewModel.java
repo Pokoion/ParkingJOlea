@@ -124,6 +124,10 @@ public class ReservationsViewModel extends ViewModel {
         tempReservationId = null;
     }
 
+    public void clearError() {
+        error.setValue("");
+    }
+
     /**
      * Carga la reserva actual del usuario (solo la que está en curso)
      */
@@ -398,8 +402,13 @@ public class ReservationsViewModel extends ViewModel {
 
             @Override
             public void onFailure(Exception e) {
-                error.postValue("Error al crear la reserva: " + e.getMessage());
-                result.postValue(false);
+                // Si el mensaje de error ya es específico, solo setear error y NO poner result false
+                if (e.getMessage() != null && e.getMessage().contains("2 minutos")) {
+                    error.postValue(e.getMessage());
+                } else {
+                    error.postValue("Error al crear la reserva: " + e.getMessage());
+                    result.postValue(false);
+                }
                 isLoading.postValue(false);
             }
         });
@@ -522,43 +531,7 @@ public class ReservationsViewModel extends ViewModel {
         });
     }
 
-    // NUEVO: Cargar números disponibles para una fila concreta
-    public void loadAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin) {
-        isLoading.setValue(true);
-        repository.getAvailableNumbers(tipo, row, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
-            @Override
-            public void onSuccess(List<String> result) {
-                availableNumbers.postValue(result);
-                isLoading.setValue(false);
-            }
-            @Override
-            public void onFailure(Exception e) {
-                error.postValue("Error al cargar números disponibles: " + e.getMessage());
-                availableNumbers.postValue(new ArrayList<>());
-                isLoading.setValue(false);
-            }
-        });
-    }
-
-    // NUEVO: Cargar filas disponibles
-    public void loadAvailableRows(String tipo) {
-        isLoading.setValue(true);
-        repository.getAvailableRows(tipo, new DataCallback<List<String>>() {
-            @Override
-            public void onSuccess(List<String> result) {
-                availableRows.postValue(result);
-                isLoading.setValue(false);
-            }
-            @Override
-            public void onFailure(Exception e) {
-                error.postValue("Error al cargar filas disponibles: " + e.getMessage());
-                availableRows.postValue(new ArrayList<>());
-                isLoading.setValue(false);
-            }
-        });
-    }
-
-    // NUEVO: Obtener plazas disponibles para tipo, fecha y horas
+    // Obtener plazas disponibles para tipo, fecha y horas (IDs tipo A-1)
     public LiveData<List<String>> getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin) {
         MutableLiveData<List<String>> result = new MutableLiveData<>();
         isLoading.setValue(true);
@@ -576,6 +549,38 @@ public class ReservationsViewModel extends ViewModel {
             }
         });
         return result;
+    }
+
+    // Obtener plazas disponibles para tipo, fecha y horas (IDs tipo A-1)
+    public void loadAvailablePlazasAndExtractRowsNumbers(String tipo, String fecha, long horaInicio, long horaFin) {
+        isLoading.setValue(true);
+        repository.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> plazas) {
+                // Extraer filas (letras) y números únicos
+                List<String> rows = new ArrayList<>();
+                List<String> numbers = new ArrayList<>();
+                for (String id : plazas) {
+                    String[] parts = id.split("-");
+                    if (parts.length == 2) {
+                        String row = parts[0];
+                        String number = parts[1];
+                        if (!rows.contains(row)) rows.add(row);
+                        if (!numbers.contains(number)) numbers.add(number);
+                    }
+                }
+                availableRows.postValue(rows);
+                availableNumbers.postValue(numbers);
+                isLoading.postValue(false);
+            }
+            @Override
+            public void onFailure(Exception e) {
+                error.postValue("Error al consultar plazas disponibles: " + e.getMessage());
+                availableRows.postValue(new ArrayList<>());
+                availableNumbers.postValue(new ArrayList<>());
+                isLoading.postValue(false);
+            }
+        });
     }
 
 }

@@ -19,6 +19,7 @@ import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.domain.Reserva;
 import com.lksnext.parkingplantilla.domain.User;
+import com.lksnext.parkingplantilla.utils.DateUtils;
 
 import android.util.Log;
 
@@ -183,6 +184,14 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
+        // Validar que la hora de inicio no sea más de 2 minutos anterior al momento actual
+        long now = System.currentTimeMillis();
+        // Obtener fecha y hora de inicio de la reserva como Date
+        java.util.Date reservaStart = DateUtils.getReservaDateTime(reserva);
+        if (reservaStart.getTime() < now - 2 * 60 * 1000) {
+            callback.onFailure(new Exception("La hora de inicio no puede ser más de 2 minutos anterior al momento actual"));
+            return;
+        }
         // Comprobar disponibilidad antes de crear la reserva
         checkAvailability(reserva, new DataCallback<Boolean>() {
             @Override

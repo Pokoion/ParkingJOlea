@@ -3,6 +3,7 @@ package com.lksnext.parkingplantilla.view.fragment;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,6 +52,18 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(ReservationsViewModel.class);
 
+        // Configurar la flecha de retroceso en la toolbar
+        binding.toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
+        binding.toolbar.setNavigationOnClickListener(v -> {
+            NavController navController = Navigation.findNavController(requireActivity(), R.id.flFragment);
+            navController.popBackStack(R.id.mainFragment, false);
+        });
+        binding.toolbar.setTitle(isEditMode ? "Editar Reserva" : "Nueva Reserva");
+
+        binding.btnNextStep.setEnabled(false); // Desactivar por defecto
+
+        setupReservationTypes(); // Inicializar el adapter ANTES de usarlo
+
         // Restaurar selección temporal si existe
         if (viewModel.getTempSelectedType() != null) {
             selectedType = viewModel.getTempSelectedType();
@@ -65,7 +78,7 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
             binding.datePickerButton.setText(DateUtils.formatDateForUi(selectedDate));
             binding.startTimeButton.setText(DateUtils.formatTimeFromMs(DateUtils.timeToMs(startTime.get(Calendar.HOUR_OF_DAY), startTime.get(Calendar.MINUTE))));
             binding.endTimeButton.setText(DateUtils.formatTimeFromMs(DateUtils.timeToMs(endTime.get(Calendar.HOUR_OF_DAY), endTime.get(Calendar.MINUTE))));
-            adapter.selectType(selectedType);
+            if (adapter != null) adapter.selectType(selectedType);
             checkAvailableSpots();
         }
 
@@ -76,20 +89,11 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
             reservationId = args.getString("RESERVATION_ID");
         }
 
-        // Configurar la flecha de retroceso en la toolbar
-        binding.toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
-        binding.toolbar.setTitle(isEditMode ? "Editar Reserva" : "Nueva Reserva");
-
-        binding.btnNextStep.setEnabled(false); // Desactivar por defecto
-
-        setupReservationTypes();
         setupListeners();
         observeViewModel();
     }
 
     private void setupListeners() {
-        binding.toolbar.setNavigationOnClickListener(v -> requireActivity().onBackPressed());
         binding.datePickerButton.setOnClickListener(v -> showDatePicker());
         binding.startTimeButton.setOnClickListener(v -> showTimePicker(true));
         binding.endTimeButton.setOnClickListener(v -> showTimePicker(false));
@@ -151,9 +155,24 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         TimePickerDialog timePickerDialog = new TimePickerDialog(
                 requireContext(),
                 (view, hourOfDay, minute) -> {
+                    Calendar now = Calendar.getInstance();
+                    now.set(Calendar.SECOND, 0);
+                    now.set(Calendar.MILLISECOND, 0);
                     if (isStartTime) {
+                        Calendar tempStart = (Calendar) selectedDate.clone();
+                        tempStart.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                        tempStart.set(Calendar.MINUTE, minute);
+                        tempStart.set(Calendar.SECOND, 0);
+                        tempStart.set(Calendar.MILLISECOND, 0);
+                        Log.d("RESERVA_DEBUG", "now: " + now.getTimeInMillis() + " (" + DateUtils.formatTimeFromMs(now.getTimeInMillis()) + ") tempStart: " + tempStart.getTimeInMillis() + " (" + DateUtils.formatTimeFromMs(tempStart.getTimeInMillis()) + ")");
+                        if (tempStart.before(now)) {
+                            Toast.makeText(requireContext(), "La hora de inicio no puede ser anterior a la actual", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
                         startTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
                         startTime.set(Calendar.MINUTE, minute);
+                        startTime.set(Calendar.SECOND, 0);
+                        startTime.set(Calendar.MILLISECOND, 0);
                         binding.startTimeButton.setText(DateUtils.formatTimeFromMs(
                                 DateUtils.timeToMs(hourOfDay, minute)));
                         if (endTime.before(startTime)) {
@@ -165,6 +184,8 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
                     } else {
                         endTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
                         endTime.set(Calendar.MINUTE, minute);
+                        endTime.set(Calendar.SECOND, 0);
+                        endTime.set(Calendar.MILLISECOND, 0);
                         binding.endTimeButton.setText(DateUtils.formatTimeFromMs(
                                 DateUtils.timeToMs(hourOfDay, minute)));
                     }
@@ -224,6 +245,14 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
     }
 
     private void onNextStep() {
+        // Validar margen de 2 minutos respecto a la hora actual
+        Calendar now = Calendar.getInstance();
+        Calendar minStart = (Calendar) now.clone();
+        minStart.add(Calendar.MINUTE, -2);
+        if (startTime.before(minStart)) {
+            Toast.makeText(requireContext(), "La hora de inicio no puede ser más de 2 minutos anterior al momento actual", Toast.LENGTH_LONG).show();
+            return;
+        }
         // Guardar selección temporal antes de navegar
         viewModel.saveTempSelection(selectedType, selectedDate, startTime, endTime, reservationId);
         Bundle args = new Bundle();
@@ -241,6 +270,7 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         viewModel.getError().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                viewModel.clearError();
             }
         });
     }

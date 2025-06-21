@@ -559,4 +559,149 @@ public class ReservationSingleUserTest {
         });
         latch2.await(TIMEOUT, TimeUnit.SECONDS);
     }
+
+    @Test
+    public void testCreateReservation_FailsIfStartTimeTooOld() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        Reserva reserva = new Reserva();
+        reserva.setUsuario(testUserEmail);
+        reserva.setPlaza(new Plaza(testPlazaId, testPlazaTipo));
+        reserva.setFecha(testFecha);
+        // Hora de inicio 10 minutos en el pasado
+        long nowMinutes = System.currentTimeMillis() / 60000;
+        reserva.setHora(new Hora((nowMinutes - 10), (nowMinutes + 60)));
+        reserva.setEstado(Reserva.Estado.ACTIVA);
+        dataRepository.createReservation(reserva, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                Assert.assertFalse("No debe permitir crear reserva con hora de inicio muy antigua", result);
+                latch.countDown();
+            }
+            @Override
+            public void onFailure(Exception e) {
+                Assert.assertTrue(e.getMessage().contains("2 minutos"));
+                latch.countDown();
+            }
+        });
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testUpdateReservation_FailsIfStartTimeTooOld() throws InterruptedException {
+        // Crear reserva válida
+        CountDownLatch latch1 = new CountDownLatch(1);
+        Reserva reserva = new Reserva();
+        reserva.setUsuario(testUserEmail);
+        reserva.setPlaza(new Plaza(testPlazaId, testPlazaTipo));
+        reserva.setFecha(testFecha);
+        long nowMinutes = System.currentTimeMillis() / 60000;
+        reserva.setHora(new Hora(nowMinutes + 10, nowMinutes + 70));
+        reserva.setEstado(Reserva.Estado.ACTIVA);
+        dataRepository.createReservation(reserva, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                reservaCreadaId = reserva.getId();
+                latch1.countDown();
+            }
+            @Override
+            public void onFailure(Exception e) { latch1.countDown(); }
+        });
+        latch1.await(TIMEOUT, TimeUnit.SECONDS);
+        // Intentar actualizar con hora de inicio en el pasado
+        CountDownLatch latch2 = new CountDownLatch(1);
+        reserva.setHora(new Hora(nowMinutes - 10, nowMinutes + 70));
+        dataRepository.updateReservation(reserva, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                Assert.assertFalse("No debe permitir actualizar reserva con hora de inicio muy antigua", result);
+                latch2.countDown();
+            }
+            @Override
+            public void onFailure(Exception e) {
+                Assert.assertTrue(e.getMessage().contains("2 minutos"));
+                latch2.countDown();
+            }
+        });
+        latch2.await(TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testReservaFinalizaAutomaticamenteEnCloud() throws Exception {
+        // Calcular el próximo minuto redondo
+        long nowMillis = System.currentTimeMillis();
+        long nextMinuteMillis = ((nowMillis / 60000) + 1) * 60000;
+        long startMillis = nowMillis - 60000; // Hace 1 min (válido)
+        long endMillis = nextMinuteMillis + 5000; // 5 seg después del próximo :00
+        long startMin = startMillis / 60000;
+        long endMin = endMillis / 60000;
+        String fecha = new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date());
+
+        // Crear reserva ACTIVA que termina en unos segundos
+        CountDownLatch latch1 = new CountDownLatch(1);
+        Reserva reserva = new Reserva(
+            fecha,
+            testUserEmail,
+            null,
+            new Plaza(testPlazaId, testPlazaTipo),
+            new Hora(startMin, endMin)
+        );
+        reserva.setEstado(Reserva.Estado.ACTIVA);
+        dataRepository.createReservation(reserva, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                reservaCreadaId = reserva.getId();
+                latch1.countDown();
+            }
+            @Override
+            public void onFailure(Exception e) { latch1.countDown(); }
+        });
+        latch1.await(TIMEOUT, TimeUnit.SECONDS);
+
+        // Esperar hasta pasar el siguiente :00 y unos segundos más
+        long waitMs = (nextMinuteMillis + 15000) - System.currentTimeMillis();
+        if (waitMs > 0) Thread.sleep(waitMs);
+
+        // Polling: comprobar estado FINALIZADA (máx 30 seg)
+        boolean finalizada = false;
+        for (int i = 0; i < 6; i++) {
+            CountDownLatch latch2 = new CountDownLatch(1);
+            dataRepository.getHistoricReservations(testUserEmail, new DataCallback<List<Reserva>>() {
+                @Override
+                public void onSuccess(List<Reserva> reservas) {
+                    for (Reserva r : reservas) {
+                        if (r.getId().equals(reservaCreadaId) && r.getEstado() == Reserva.Estado.FINALIZADA) {
+                            latch2.countDown();
+                            return;
+                        }
+                    }
+                    latch2.countDown();
+                }
+                @Override
+                public void onFailure(Exception e) { latch2.countDown(); }
+            });
+            latch2.await(TIMEOUT, TimeUnit.SECONDS);
+            // Si ya está finalizada, salir
+            List<Reserva> historic = new java.util.ArrayList<>();
+            dataRepository.getHistoricReservations(testUserEmail, new DataCallback<List<Reserva>>() {
+                @Override
+                public void onSuccess(List<Reserva> reservas) {
+                    historic.addAll(reservas);
+                }
+                @Override
+                public void onFailure(Exception e) { }
+            });
+            for (Reserva r : historic) {
+                if (r.getId().equals(reservaCreadaId) && r.getEstado() == Reserva.Estado.FINALIZADA) {
+                    finalizada = true;
+                    break;
+                }
+            }
+            if (finalizada) break;
+            Thread.sleep(5000); // Esperar 5 seg antes de volver a comprobar
+        }
+        Assert.assertTrue("La reserva debe pasar a FINALIZADA automáticamente por la función cloud", finalizada);
+    }
+
+    // Test de finalización automática: se recomienda hacer test manual o integración, pero aquí se documenta el flujo.
+    // Para test automático, se puede crear una reserva con hora de fin en el pasado y comprobar en 2 minutos si pasa a FINALIZADA.
 }

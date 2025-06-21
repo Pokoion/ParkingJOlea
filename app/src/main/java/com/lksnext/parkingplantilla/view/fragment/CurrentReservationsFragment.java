@@ -1,6 +1,7 @@
 package com.lksnext.parkingplantilla.view.fragment;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +19,18 @@ public class CurrentReservationsFragment extends Fragment {
 
     private FragmentCurrentReservationsBinding binding;
     private ReservationsViewModel viewModel;
+
+    private Handler refreshHandler = new Handler();
+    private final int REFRESH_INTERVAL_MS = 10000; // 10 segundos
+    private final Runnable refreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (isResumed()) {
+                viewModel.loadUserReservations();
+                refreshHandler.postDelayed(this, REFRESH_INTERVAL_MS);
+            }
+        }
+    };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -48,6 +61,18 @@ public class CurrentReservationsFragment extends Fragment {
 
         // Cargar reservas actuales
         viewModel.loadUserReservations();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refreshHandler.postDelayed(refreshRunnable, REFRESH_INTERVAL_MS);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        refreshHandler.removeCallbacks(refreshRunnable);
     }
 
     @Override

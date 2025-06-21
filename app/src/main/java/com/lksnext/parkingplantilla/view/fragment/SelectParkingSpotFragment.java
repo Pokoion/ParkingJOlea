@@ -54,9 +54,16 @@ public class SelectParkingSpotFragment extends Fragment {
             endTime = (Calendar) args.getSerializable("END_TIME");
             reservationId = args.getString("RESERVATION_ID");
         }
-        // Cargar filas disponibles al iniciar
-        if (selectedType != null) {
-            viewModel.loadAvailableRows(selectedType);
+        // Cargar filas y números disponibles al iniciar (una sola llamada)
+        if (selectedType != null && selectedDate != null && startTime != null && endTime != null) {
+            String apiDate = DateUtils.formatDateForApi(selectedDate);
+            long startTimeMs = DateUtils.timeToMs(
+                    startTime.get(Calendar.HOUR_OF_DAY),
+                    startTime.get(Calendar.MINUTE));
+            long endTimeMs = DateUtils.timeToMs(
+                    endTime.get(Calendar.HOUR_OF_DAY),
+                    endTime.get(Calendar.MINUTE));
+            viewModel.loadAvailablePlazasAndExtractRowsNumbers(selectedType, apiDate, startTimeMs, endTimeMs);
         }
         // Configurar toolbar y botón de retroceso si existe
         if (binding.toolbar != null) {
@@ -86,27 +93,8 @@ public class SelectParkingSpotFragment extends Fragment {
     }
 
     private void setupParkingSpinners() {
-        List<String> rows = new ArrayList<>();
-        ArrayAdapter<String> rowAdapter = new ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_item, rows);
-        rowAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        binding.parkingRowSpinner.setAdapter(rowAdapter);
-        binding.parkingRowSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String selectedRow = (String) parent.getItemAtPosition(position);
-                String apiDate = DateUtils.formatDateForApi(selectedDate);
-                long startTimeMs = DateUtils.timeToMs(
-                        startTime.get(Calendar.HOUR_OF_DAY),
-                        startTime.get(Calendar.MINUTE));
-                long endTimeMs = DateUtils.timeToMs(
-                        endTime.get(Calendar.HOUR_OF_DAY),
-                        endTime.get(Calendar.MINUTE));
-                viewModel.loadAvailableNumbers(selectedType, selectedRow, apiDate, startTimeMs, endTimeMs);
-            }
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
+        // No cargar ni actualizar desde el spinner, solo observar los LiveData
+        // El filtrado de números se hará en updateRowSpinner
     }
 
     private void updateRowSpinner(List<String> rows) {
@@ -125,6 +113,29 @@ public class SelectParkingSpotFragment extends Fragment {
         if (!displayRows.isEmpty() && binding.parkingRowSpinner.getCount() > 0) {
             binding.parkingRowSpinner.setSelection(0);
         }
+        // Al cambiar la fila, filtrar los números disponibles para esa fila
+        binding.parkingRowSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedRow = (String) parent.getItemAtPosition(position);
+                if (selectedRow != null && !selectedRow.equals("No disponible")) {
+                    // Filtrar los números para la fila seleccionada
+                    viewModel.getAvailableNumbers().observe(getViewLifecycleOwner(), numbers -> {
+                        List<String> filtered = new ArrayList<>();
+                        for (String num : numbers) {
+                            // Solo mostrar números que correspondan a la fila seleccionada
+                            // En este enfoque, numbers ya está filtrado, pero si necesitas filtrar, hazlo aquí
+                            filtered.add(num);
+                        }
+                        updateNumberSpinner(filtered);
+                    });
+                } else {
+                    updateNumberSpinner(new ArrayList<>());
+                }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
     }
 
     private void updateNumberSpinner(List<String> numbers) {
@@ -154,7 +165,6 @@ public class SelectParkingSpotFragment extends Fragment {
 
     private void observeViewModel() {
         viewModel.getAvailableRows().observe(getViewLifecycleOwner(), this::updateRowSpinner);
-        viewModel.getAvailableNumbers().observe(getViewLifecycleOwner(), this::updateNumberSpinner);
         viewModel.getRandomPlaza().observe(getViewLifecycleOwner(), plazaId -> {
             if (plazaId != null) {
                 continueWithSaveProcessRandom(plazaId);
@@ -167,6 +177,7 @@ public class SelectParkingSpotFragment extends Fragment {
         viewModel.getError().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(requireContext(), error, Toast.LENGTH_SHORT).show();
+                viewModel.clearError();
             }
         });
     }
@@ -209,6 +220,7 @@ public class SelectParkingSpotFragment extends Fragment {
         viewModel.createReservation(reserva).observe(getViewLifecycleOwner(), result -> {
             binding.btnSaveReservation.setEnabled(true);
             if (result != null && result) {
+                viewModel.clearTempSelection(); // Limpiar selección temporal al crear correctamente
                 Toast.makeText(requireContext(), "Reserva creada correctamente", Toast.LENGTH_SHORT).show();
                 NavController navController = androidx.navigation.Navigation.findNavController(requireActivity(), com.lksnext.parkingplantilla.R.id.flFragment);
                 navController.popBackStack(R.id.mainFragment, false);
@@ -232,6 +244,7 @@ public class SelectParkingSpotFragment extends Fragment {
         viewModel.createReservation(reserva).observe(getViewLifecycleOwner(), result -> {
             binding.btnSaveReservation.setEnabled(true);
             if (result != null && result) {
+                viewModel.clearTempSelection(); // Limpiar selección temporal al crear correctamente
                 Toast.makeText(requireContext(), "Reserva creada correctamente", Toast.LENGTH_SHORT).show();
                 androidx.navigation.NavController navController = androidx.navigation.Navigation.findNavController(requireActivity(), com.lksnext.parkingplantilla.R.id.flFragment);
                 navController.popBackStack(com.lksnext.parkingplantilla.R.id.mainFragment, false);

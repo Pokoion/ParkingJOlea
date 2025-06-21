@@ -45,14 +45,18 @@ public class Validators {
 
     public static String getTimeIntervalMessage(Calendar startTime, Calendar endTime) {
         long diffMillis = endTime.getTimeInMillis() - startTime.getTimeInMillis();
-        int diffHours = (int) (diffMillis / (60 * 60 * 1000));
+        int diffMinutes = (int) (diffMillis / (60 * 1000));
+        int diffHours = diffMinutes / 60;
+        int minutos = diffMinutes % 60;
 
         if (diffMillis <= 0) {
             return "La hora de fin debe ser posterior a la de inicio";
         } else if (diffHours > 9) {
             return "El intervalo no puede ser mayor a 9 horas";
-        } else {
+        } else if (minutos == 0) {
             return "Intervalo de " + diffHours + " horas seleccionado";
+        } else {
+            return "Intervalo de " + diffHours + " horas y " + minutos + " minutos seleccionado";
         }
     }
 
