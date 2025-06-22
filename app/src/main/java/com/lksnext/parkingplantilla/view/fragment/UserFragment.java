@@ -20,6 +20,9 @@ import com.lksnext.parkingplantilla.viewmodel.LoginViewModel;
 import com.lksnext.parkingplantilla.viewmodel.UserViewModel;
 import com.lksnext.parkingplantilla.data.UserPreferencesManager;
 
+import android.app.AlarmManager;
+import android.provider.Settings;
+
 public class UserFragment extends Fragment {
 
     private FragmentUserBinding binding;
@@ -87,10 +90,20 @@ public class UserFragment extends Fragment {
 
         binding.startReminderSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
+                // Permiso de notificaciones (Android 13+)
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
                         requireContext().checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                     lastSwitchTriedToEnable = (android.widget.CompoundButton) buttonView;
                     notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
+                }
+                // Permiso de alarmas exactas (Android 12+)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(android.content.Context.ALARM_SERVICE);
+                    if (alarmManager != null && !alarmManager.canScheduleExactAlarms()) {
+                        Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                        startActivity(intent);
+                        Toast.makeText(requireContext(), "Activa el permiso de alarmas exactas para recibir recordatorios.", Toast.LENGTH_LONG).show();
+                    }
                 }
             }
             userPreferencesManager.setStartReminderEnabled(isChecked);
@@ -98,10 +111,20 @@ public class UserFragment extends Fragment {
 
         binding.endReminderSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
+                // Permiso de notificaciones (Android 13+)
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
                         requireContext().checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                     lastSwitchTriedToEnable = (android.widget.CompoundButton) buttonView;
                     notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
+                }
+                // Permiso de alarmas exactas (Android 12+)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(android.content.Context.ALARM_SERVICE);
+                    if (alarmManager != null && !alarmManager.canScheduleExactAlarms()) {
+                        Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                        startActivity(intent);
+                        Toast.makeText(requireContext(), "Activa el permiso de alarmas exactas para recibir recordatorios.", Toast.LENGTH_LONG).show();
+                    }
                 }
             }
             userPreferencesManager.setEndReminderEnabled(isChecked);

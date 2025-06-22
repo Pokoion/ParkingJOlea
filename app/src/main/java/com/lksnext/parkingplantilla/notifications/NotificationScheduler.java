@@ -1,35 +1,45 @@
 package com.lksnext.parkingplantilla.notifications;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
-
-import androidx.work.Data;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.WorkManager;
-import androidx.work.WorkRequest;
-
-import java.util.concurrent.TimeUnit;
+import android.content.Intent;
 
 public class NotificationScheduler {
     public static void scheduleReservationNotification(Context context, long triggerAtMillis, String title, String message, String uniqueTag) {
         long delay = triggerAtMillis - System.currentTimeMillis();
         if (delay <= 0) return; // No programar si ya pasó
 
-        Data data = new Data.Builder()
-                .putString(ReservationNotificationWorker.KEY_TITLE, title)
-                .putString(ReservationNotificationWorker.KEY_MESSAGE, message)
-                .build();
+        Intent intent = new Intent(context, ReservationNotificationReceiver.class);
+        intent.putExtra(ReservationNotificationReceiver.EXTRA_TITLE, title);
+        intent.putExtra(ReservationNotificationReceiver.EXTRA_MESSAGE, message);
+        intent.setAction(uniqueTag); // Para identificar la alarma
 
-        WorkRequest workRequest = new OneTimeWorkRequest.Builder(ReservationNotificationWorker.class)
-                .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-                .setInputData(data)
-                .addTag(uniqueTag)
-                .build();
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context,
+                uniqueTag.hashCode(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
 
-        WorkManager.getInstance(context).enqueue(workRequest);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager != null) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
+        }
     }
 
     public static void cancelReservationNotification(Context context, String uniqueTag) {
-        WorkManager.getInstance(context).cancelAllWorkByTag(uniqueTag);
+        Intent intent = new Intent(context, ReservationNotificationReceiver.class);
+        intent.setAction(uniqueTag);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context,
+                uniqueTag.hashCode(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager != null) {
+            alarmManager.cancel(pendingIntent);
+        }
     }
 }
-

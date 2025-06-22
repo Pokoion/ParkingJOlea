@@ -101,6 +101,7 @@ public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapte
             args.putLong("RESERVATION_START_TIME", reserva.getHora().getHoraInicio());
             args.putLong("RESERVATION_END_TIME", reserva.getHora().getHoraFin());
             args.putString("RESERVATION_SPOT", reserva.getPlaza().getId());
+            args.putString("RESERVATION_TIME_STRING", reserva.getHora().toString());
             navController.navigate(R.id.createReservationFragment, args);
         }
 
