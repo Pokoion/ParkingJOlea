@@ -31,15 +31,7 @@
         android:name="com.lksnext.parkingplantilla.view.fragment.CreateReservationFragment"
         android:label="Crear Reserva"
         tools:layout="@layout/fragment_create_reservation">
-        <action
-            android:id="@+id/action_createReservationFragment_to_selectParkingSpotFragment"
-            app:destination="@id/selectParkingSpotFragment" />
     </fragment>
 
-    <fragment
-        android:id="@+id/selectParkingSpotFragment"
-        android:name="com.lksnext.parkingplantilla.view.fragment.SelectParkingSpotFragment"
-        android:label="Seleccionar Plaza"
-        tools:layout="@layout/fragment_select_parking_spot" />
 </navigation>
 

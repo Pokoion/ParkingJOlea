@@ -291,4 +291,31 @@ public class DateUtils {
     public static long getEndReminderTime(Reserva reserva) {
         return getReservaEndTime(reserva).getTime() - 15 * 60 * 1000;
     }
+
+    /**
+     * Parsea una fecha en formato API (yyyy-MM-dd) y la convierte a un Calendar
+     */
+    public static Calendar parseDateForApiToCalendar(String apiDate) {
+        SimpleDateFormat apiDateFormat = new SimpleDateFormat(API_DATE_FORMAT, Locale.getDefault());
+        Calendar calendar = Calendar.getInstance();
+        try {
+            Date date = apiDateFormat.parse(apiDate);
+            calendar.setTime(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return calendar;
+    }
+
+    /**
+     * Combina una fecha (Calendar) y unos milisegundos desde medianoche, devolviendo un Calendar con la hora correcta.
+     */
+    public static Calendar combineDateAndTimeMs(Calendar date, long timeMs) {
+        Calendar result = (Calendar) date.clone();
+        result.set(Calendar.HOUR_OF_DAY, (int) (timeMs / 3600000));
+        result.set(Calendar.MINUTE, (int) ((timeMs % 3600000) / 60000));
+        result.set(Calendar.SECOND, 0);
+        result.set(Calendar.MILLISECOND, 0);
+        return result;
+    }
 }

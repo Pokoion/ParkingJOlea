@@ -105,24 +105,40 @@ public class DataRepository {
         dataSource.updateReservation(reserva, callback);
     }
 
+    public void checkAvailability(Reserva reserva, String excludeReservationId, DataCallback<Boolean> callback) {
+        dataSource.checkAvailability(reserva, excludeReservationId, callback);
+    }
+
     public void checkAvailability(Reserva reserva, DataCallback<Boolean> callback) {
-        dataSource.checkAvailability(reserva, callback);
+        dataSource.checkAvailability(reserva, null, callback);
     }
 
     public void hasReservationOnDate(String userId, String date, DataCallback<Boolean> callback){
         dataSource.hasReservationOnDate(userId, date, callback);
     }
 
+    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<String> callback) {
+        dataSource.assignRandomPlaza(tipo, fecha, horaInicio, horaFin, excludeReservationId, callback);
+    }
+
     public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<String> callback) {
-        dataSource.assignRandomPlaza(tipo, fecha, horaInicio, horaFin, callback);
+        dataSource.assignRandomPlaza(tipo, fecha, horaInicio, horaFin, null, callback);
+    }
+
+    public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
+        dataSource.getAvailableNumbers(tipo, row, fecha, horaInicio, horaFin, excludeReservationId, callback);
     }
 
     public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
-        dataSource.getAvailableNumbers(tipo, row, fecha, horaInicio, horaFin, callback);
+        dataSource.getAvailableNumbers(tipo, row, fecha, horaInicio, horaFin, null, callback);
+    }
+
+    public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
+        dataSource.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, excludeReservationId, callback);
     }
 
     public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
-        dataSource.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, callback);
+        dataSource.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, null, callback);
     }
 
     public void getAvailableRows(String tipo, DataCallback<List<String>> callback) {

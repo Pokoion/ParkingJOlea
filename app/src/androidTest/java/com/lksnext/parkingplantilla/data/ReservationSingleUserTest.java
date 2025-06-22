@@ -702,6 +702,110 @@ public class ReservationSingleUserTest {
         Assert.assertTrue("La reserva debe pasar a FINALIZADA automáticamente por la función cloud", finalizada);
     }
 
+    @Test
+    public void testGetAvailablePlazas_ExcludeReservation() throws InterruptedException {
+        // Crear reserva activa para ocupar la plaza
+        CountDownLatch latch1 = new CountDownLatch(1);
+        Reserva reserva = new Reserva();
+        reserva.setUsuario(testUserEmail);
+        reserva.setPlaza(new Plaza(testPlazaId, testPlazaTipo));
+        reserva.setFecha(testFecha);
+        reserva.setHora(new Hora(testHoraInicio, testHoraFin));
+        reserva.setEstado(Reserva.Estado.ACTIVA);
+        dataRepository.createReservation(reserva, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                reservaCreadaId = reserva.getId();
+                latch1.countDown();
+            }
+            @Override
+            public void onFailure(Exception e) { latch1.countDown(); }
+        });
+        latch1.await(TIMEOUT, TimeUnit.SECONDS);
+        // Comprobar plazas disponibles (sin excluir, debe estar ocupada)
+        CountDownLatch latch2 = new CountDownLatch(1);
+        dataRepository.getAvailablePlazas(testPlazaTipo, testFecha, testHoraInicio, testHoraFin, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> plazas) {
+                Assert.assertFalse(plazas.contains(testPlazaId));
+                latch2.countDown();
+            }
+            @Override
+            public void onFailure(Exception e) {
+                Assert.fail("No debe fallar: " + e.getMessage());
+                latch2.countDown();
+            }
+        });
+        latch2.await(TIMEOUT, TimeUnit.SECONDS);
+        // Comprobar plazas disponibles excluyendo la reserva creada (debe estar disponible)
+        CountDownLatch latch3 = new CountDownLatch(1);
+        dataRepository.getAvailablePlazas(testPlazaTipo, testFecha, testHoraInicio, testHoraFin, reservaCreadaId, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> plazas) {
+                Assert.assertTrue(plazas.contains(testPlazaId));
+                latch3.countDown();
+            }
+            @Override
+            public void onFailure(Exception e) {
+                Assert.fail("No debe fallar: " + e.getMessage());
+                latch3.countDown();
+            }
+        });
+        latch3.await(TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testAssignRandomPlaza_ExcludeReservation() throws InterruptedException {
+        // Crear reserva activa para ocupar la plaza
+        CountDownLatch latch1 = new CountDownLatch(1);
+        Reserva reserva = new Reserva();
+        reserva.setUsuario(testUserEmail);
+        reserva.setPlaza(new Plaza(testPlazaId, testPlazaTipo));
+        reserva.setFecha(testFecha);
+        reserva.setHora(new Hora(testHoraInicio, testHoraFin));
+        reserva.setEstado(Reserva.Estado.ACTIVA);
+        dataRepository.createReservation(reserva, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean result) {
+                reservaCreadaId = reserva.getId();
+                latch1.countDown();
+            }
+            @Override
+            public void onFailure(Exception e) { latch1.countDown(); }
+        });
+        latch1.await(TIMEOUT, TimeUnit.SECONDS);
+        // Sin excluir, no debe asignar la plaza ocupada
+        CountDownLatch latch2 = new CountDownLatch(1);
+        dataRepository.assignRandomPlaza(testPlazaTipo, testFecha, testHoraInicio, testHoraFin, new DataCallback<String>() {
+            @Override
+            public void onSuccess(String plazaId) {
+                Assert.assertNull(plazaId);
+                latch2.countDown();
+            }
+            @Override
+            public void onFailure(Exception e) {
+                Assert.fail("No debe fallar: " + e.getMessage());
+                latch2.countDown();
+            }
+        });
+        latch2.await(TIMEOUT, TimeUnit.SECONDS);
+        // Excluyendo la reserva creada, debe poder asignar la plaza
+        CountDownLatch latch3 = new CountDownLatch(1);
+        dataRepository.assignRandomPlaza(testPlazaTipo, testFecha, testHoraInicio, testHoraFin, reservaCreadaId, new DataCallback<String>() {
+            @Override
+            public void onSuccess(String plazaId) {
+                Assert.assertEquals(testPlazaId, plazaId);
+                latch3.countDown();
+            }
+            @Override
+            public void onFailure(Exception e) {
+                Assert.fail("No debe fallar: " + e.getMessage());
+                latch3.countDown();
+            }
+        });
+        latch3.await(TIMEOUT, TimeUnit.SECONDS);
+    }
+
     // Test de finalización automática: se recomienda hacer test manual o integración, pero aquí se documenta el flujo.
     // Para test automático, se puede crear una reserva con hora de fin en el pasado y comprobar en 2 minutos si pasa a FINALIZADA.
 }

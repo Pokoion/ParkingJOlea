@@ -440,63 +440,6 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
-    public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
-        Map<String, List<Reserva>> mapa = getReservasPorPlaza(fecha, horaInicio, horaFin, tipo);
-        List<String> disponibles = new ArrayList<>();
-        for (Map.Entry<String, List<Reserva>> entry : mapa.entrySet()) {
-            boolean libre = true;
-            for (Reserva r : entry.getValue()) {
-                if (r.getEstado() == Reserva.Estado.ACTIVA) {
-                    libre = false;
-                    break;
-                }
-            }
-            if (libre) {
-                disponibles.add(entry.getKey());
-            }
-        }
-        callback.onSuccess(disponibles);
-    }
-
-    @Override
-    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<String> callback) {
-        getAvailablePlazas(tipo, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
-            @Override
-            public void onSuccess(List<String> disponibles) {
-                if (disponibles.isEmpty()) {
-                    callback.onSuccess(null);
-                } else {
-                    int idx = (int) (Math.random() * disponibles.size());
-                    callback.onSuccess(disponibles.get(idx));
-                }
-            }
-            @Override
-            public void onFailure(Exception e) {
-                callback.onFailure(e);
-            }
-        });
-    }
-
-    @Override
-    public void checkAvailability(Reserva reserva, DataCallback<Boolean> callback) {
-        String fecha = reserva.getFecha();
-        long horaInicio = reserva.getHora().getHoraInicio();
-        long horaFin = reserva.getHora().getHoraFin();
-        String plazaId = reserva.getPlaza().getId();
-        Map<String, List<Reserva>> mapa = getReservasPorPlaza(fecha, horaInicio, horaFin, null);
-        boolean isAvailable = true;
-        if (mapa.containsKey(plazaId)) {
-            for (Reserva r : mapa.get(plazaId)) {
-                if (r.getEstado() == Reserva.Estado.ACTIVA) {
-                    isAvailable = false;
-                    break;
-                }
-            }
-        }
-        callback.onSuccess(isAvailable);
-    }
-
-    @Override
     public void hasReservationOnDate(String userId, String date, DataCallback<Boolean> callback) {
         try {
             List<Reserva> userReservations = reservasPorUsuario.get(userId);
@@ -517,32 +460,6 @@ public class LocalDataSource implements DataSource {
         } catch (Exception e) {
             callback.onFailure(e);
         }
-    }
-
-    @Override
-    public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
-        List<String> disponibles = new ArrayList<>();
-        int maxNumber = 10;
-        if (tipo.equals(Plaza.TIPO_MOTORCYCLE) && row.equals("E")) maxNumber = 8;
-        if (tipo.equals(Plaza.TIPO_DISABLED) && row.equals("F")) maxNumber = 5;
-        if (tipo.equals(Plaza.TIPO_CV_CHARGER) && row.equals("G")) maxNumber = 6;
-        for (int i = 1; i <= maxNumber; i++) {
-            String plazaId = row + "-" + i;
-            boolean reservada = false;
-            for (Reserva r : todasReservas) {
-                if (r.getPlaza() != null && plazaId.equals(r.getPlaza().getId()) && r.getFecha().equals(fecha)
-                    && r.getEstado() == Reserva.Estado.ACTIVA) {
-                    long ini = r.getHora().getHoraInicio();
-                    long fin = r.getHora().getHoraFin();
-                    if (!(horaFin <= ini || horaInicio >= fin)) {
-                        reservada = true;
-                        break;
-                    }
-                }
-            }
-            if (!reservada) disponibles.add(String.valueOf(i));
-        }
-        callback.onSuccess(disponibles);
     }
 
     @Override
@@ -637,5 +554,97 @@ public class LocalDataSource implements DataSource {
             }
         }
         callback.onSuccess(rows);
+    }
+
+    @Override
+    public void checkAvailability(Reserva reserva, String excludeReservationId, DataCallback<Boolean> callback) {
+        String fecha = reserva.getFecha();
+        long horaInicio = reserva.getHora().getHoraInicio();
+        long horaFin = reserva.getHora().getHoraFin();
+        String plazaId = reserva.getPlaza().getId();
+        Map<String, List<Reserva>> mapa = getReservasPorPlaza(fecha, horaInicio, horaFin, null);
+        boolean isAvailable = true;
+        if (mapa.containsKey(plazaId)) {
+            for (Reserva r : mapa.get(plazaId)) {
+                if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
+                    continue;
+                }
+                if (r.getEstado() == Reserva.Estado.ACTIVA) {
+                    isAvailable = false;
+                    break;
+                }
+            }
+        }
+        callback.onSuccess(isAvailable);
+    }
+
+    @Override
+    public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
+        Map<String, List<Reserva>> mapa = getReservasPorPlaza(fecha, horaInicio, horaFin, tipo);
+        List<String> disponibles = new ArrayList<>();
+        for (Map.Entry<String, List<Reserva>> entry : mapa.entrySet()) {
+            boolean libre = true;
+            for (Reserva r : entry.getValue()) {
+                if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
+                    continue;
+                }
+                if (r.getEstado() == Reserva.Estado.ACTIVA) {
+                    libre = false;
+                    break;
+                }
+            }
+            if (libre) {
+                disponibles.add(entry.getKey());
+            }
+        }
+        callback.onSuccess(disponibles);
+    }
+
+    @Override
+    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<String> callback) {
+        getAvailablePlazas(tipo, fecha, horaInicio, horaFin, excludeReservationId, new DataCallback<List<String>>() {
+            @Override
+            public void onSuccess(List<String> disponibles) {
+                if (disponibles.isEmpty()) {
+                    callback.onSuccess(null);
+                } else {
+                    int idx = (int) (Math.random() * disponibles.size());
+                    callback.onSuccess(disponibles.get(idx));
+                }
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
+    }
+
+    @Override
+    public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
+        List<String> disponibles = new ArrayList<>();
+        int maxNumber = 10;
+        if (tipo.equals(Plaza.TIPO_MOTORCYCLE) && row.equals("E")) maxNumber = 8;
+        if (tipo.equals(Plaza.TIPO_DISABLED) && row.equals("F")) maxNumber = 5;
+        if (tipo.equals(Plaza.TIPO_CV_CHARGER) && row.equals("G")) maxNumber = 6;
+        for (int i = 1; i <= maxNumber; i++) {
+            String plazaId = row + "-" + i;
+            boolean reservada = false;
+            for (Reserva r : todasReservas) {
+                if (r.getPlaza() != null && plazaId.equals(r.getPlaza().getId()) && r.getFecha().equals(fecha)
+                    && r.getEstado() == Reserva.Estado.ACTIVA) {
+                    if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
+                        continue;
+                    }
+                    long ini = r.getHora().getHoraInicio();
+                    long fin = r.getHora().getHoraFin();
+                    if (!(horaFin <= ini || horaInicio >= fin)) {
+                        reservada = true;
+                        break;
+                    }
+                }
+            }
+            if (!reservada) disponibles.add(String.valueOf(i));
+        }
+        callback.onSuccess(disponibles);
     }
 }

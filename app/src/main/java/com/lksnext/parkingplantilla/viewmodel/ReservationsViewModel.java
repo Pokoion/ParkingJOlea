@@ -12,7 +12,6 @@ import com.lksnext.parkingplantilla.domain.User;
 import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.utils.DateUtils;
-import com.lksnext.parkingplantilla.utils.Validators;
 import com.lksnext.parkingplantilla.notifications.NotificationScheduler;
 import com.lksnext.parkingplantilla.data.UserPreferencesManager;
 import android.content.Context;
@@ -74,7 +73,6 @@ public class ReservationsViewModel extends ViewModel {
         return randomPlaza;
     }
 
-    // Método para limpiar el valor de randomPlaza
     public void clearRandomPlaza() {
         randomPlaza.setValue(null);
     }
@@ -87,7 +85,6 @@ public class ReservationsViewModel extends ViewModel {
         return availableRows;
     }
 
-    // Métodos para guardar y restaurar selección
     public void saveTempSelection(String type, Calendar date, Calendar start, Calendar end, String reservationId) {
         this.tempSelectedType = type;
         this.tempSelectedDate = (date != null) ? (Calendar) date.clone() : null;
@@ -162,9 +159,6 @@ public class ReservationsViewModel extends ViewModel {
         }
     }
 
-    /**
-     * Carga la próxima reserva del usuario (la primera futura, no en curso)
-     */
     public void loadNextReservation() {
         User currentUser = repository.getCurrentUser();
         if (currentUser != null) {
@@ -332,11 +326,11 @@ public class ReservationsViewModel extends ViewModel {
     /**
      * Verifica la disponibilidad de una reserva utilizando el objeto Reserva directamente
      */
-    public LiveData<Boolean> checkReservationAvailability(Reserva reserva) {
+    public LiveData<Boolean> checkReservationAvailability(Reserva reserva, String excludeReservationId) {
         MutableLiveData<Boolean> result = new MutableLiveData<>();
         isLoading.setValue(true);
 
-        repository.checkAvailability(reserva, new DataCallback<Boolean>() {
+        repository.checkAvailability(reserva, excludeReservationId, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean available) {
                 result.setValue(available);
@@ -352,6 +346,11 @@ public class ReservationsViewModel extends ViewModel {
         });
 
         return result;
+    }
+
+    // Sobrecarga para compatibilidad
+    public LiveData<Boolean> checkReservationAvailability(Reserva reserva) {
+        return checkReservationAvailability(reserva, null);
     }
 
     /**
@@ -422,6 +421,16 @@ public class ReservationsViewModel extends ViewModel {
     public LiveData<Boolean> updateReservation(Reserva reserva) {
         MutableLiveData<Boolean> result = new MutableLiveData<>();
         isLoading.setValue(true);
+
+        User currentUser = repository.getCurrentUser();
+        if (currentUser == null) {
+            error.setValue("Usuario no conectado");
+            result.setValue(false);
+            isLoading.setValue(false);
+            return result;
+        }
+        // Asegurarse de que el usuario está correctamente asignado
+        reserva.setUsuario(currentUser.getEmail());
 
         if (reserva.getId() == null || reserva.getId().isEmpty()) {
             error.setValue("ID de reserva no válido");
@@ -512,10 +521,9 @@ public class ReservationsViewModel extends ViewModel {
         return reservedDates;
     }
 
-    // NUEVO: Solicitar plaza random (el backend la asigna y la devuelve)
-    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin) {
+    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId) {
         isLoading.setValue(true);
-        repository.assignRandomPlaza(tipo, fecha, horaInicio, horaFin, new DataCallback<String>() {
+        repository.assignRandomPlaza(tipo, fecha, horaInicio, horaFin, excludeReservationId, new DataCallback<String>() {
             @Override
             public void onSuccess(String result) {
                 randomPlaza.postValue(result);
@@ -531,11 +539,15 @@ public class ReservationsViewModel extends ViewModel {
         });
     }
 
-    // Obtener plazas disponibles para tipo, fecha y horas (IDs tipo A-1)
-    public LiveData<List<String>> getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin) {
+    // Sobrecarga para compatibilidad (sin excludeReservationId)
+    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin) {
+        assignRandomPlaza(tipo, fecha, horaInicio, horaFin, null);
+    }
+
+    public LiveData<List<String>> getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId) {
         MutableLiveData<List<String>> result = new MutableLiveData<>();
         isLoading.setValue(true);
-        repository.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
+        repository.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, excludeReservationId, new DataCallback<List<String>>() {
             @Override
             public void onSuccess(List<String> plazas) {
                 result.postValue(plazas);
@@ -551,10 +563,13 @@ public class ReservationsViewModel extends ViewModel {
         return result;
     }
 
-    // Obtener plazas disponibles para tipo, fecha y horas (IDs tipo A-1)
-    public void loadAvailablePlazasAndExtractRowsNumbers(String tipo, String fecha, long horaInicio, long horaFin) {
+    public LiveData<List<String>> getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin) {
+        return getAvailablePlazas(tipo, fecha, horaInicio, horaFin, null);
+    }
+
+    public void loadAvailablePlazasAndExtractRowsNumbers(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId) {
         isLoading.setValue(true);
-        repository.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
+        repository.getAvailablePlazas(tipo, fecha, horaInicio, horaFin, excludeReservationId, new DataCallback<List<String>>() {
             @Override
             public void onSuccess(List<String> plazas) {
                 // Extraer filas (letras) y números únicos
@@ -581,6 +596,10 @@ public class ReservationsViewModel extends ViewModel {
                 isLoading.postValue(false);
             }
         });
+    }
+
+    public void loadAvailablePlazasAndExtractRowsNumbers(String tipo, String fecha, long horaInicio, long horaFin) {
+        loadAvailablePlazasAndExtractRowsNumbers(tipo, fecha, horaInicio, horaFin, null);
     }
 
 }

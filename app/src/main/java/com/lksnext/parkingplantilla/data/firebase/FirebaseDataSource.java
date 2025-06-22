@@ -184,38 +184,49 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
-        // Validar que la hora de inicio no sea más de 2 minutos anterior al momento actual
         long now = System.currentTimeMillis();
-        // Obtener fecha y hora de inicio de la reserva como Date
         java.util.Date reservaStart = DateUtils.getReservaDateTime(reserva);
         if (reservaStart.getTime() < now - 2 * 60 * 1000) {
             callback.onFailure(new Exception("La hora de inicio no puede ser más de 2 minutos anterior al momento actual"));
             return;
         }
-        // Comprobar disponibilidad antes de crear la reserva
-        checkAvailability(reserva, new DataCallback<Boolean>() {
-            @Override
-            public void onSuccess(Boolean available) {
-                if (!available) {
-                    callback.onSuccess(false);
-                    return;
-                }
-                String id = db.collection("reservas").document().getId();
-                reserva.setId(id);
-                db.collection("reservas").document(id)
-                        .set(reserva)
-                        .addOnSuccessListener(aVoid -> callback.onSuccess(true))
-                        .addOnFailureListener(callback::onFailure);
-            }
-            @Override
-            public void onFailure(Exception e) {
-                callback.onFailure(e);
-            }
-        });
+        // Comprobar si ya existe una reserva activa para ese usuario y fecha
+        db.collection("reservas")
+                .whereEqualTo("usuario", reserva.getUsuario())
+                .whereEqualTo("fecha", reserva.getFecha())
+                .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        callback.onFailure(new Exception("Ya tienes una reserva activa para este día"));
+                        return;
+                    }
+                    // Comprobar disponibilidad antes de crear la reserva (sin excluir ninguna, porque es nueva)
+                    checkAvailability(reserva, null, new DataCallback<Boolean>() {
+                        @Override
+                        public void onSuccess(Boolean available) {
+                            if (!available) {
+                                callback.onSuccess(false);
+                                return;
+                            }
+                            String id = db.collection("reservas").document().getId();
+                            reserva.setId(id);
+                            db.collection("reservas").document(id)
+                                    .set(reserva)
+                                    .addOnSuccessListener(aVoid -> callback.onSuccess(true))
+                                    .addOnFailureListener(callback::onFailure);
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            callback.onFailure(e);
+                        }
+                    });
+                })
+                .addOnFailureListener(callback::onFailure);
     }
 
     @Override
-    public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
+    public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
         db.collection("plazas")
                 .whereEqualTo("tipo", tipo)
                 .get()
@@ -234,6 +245,9 @@ public class FirebaseDataSource implements DataSource {
                                 List<String> ocupadas = new ArrayList<>();
                                 for (QueryDocumentSnapshot rdoc : reservasSnap) {
                                     Reserva r = rdoc.toObject(Reserva.class);
+                                    if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
+                                        continue;
+                                    }
                                     if (r.getHora().getHoraInicio() < horaFin && r.getHora().getHoraFin() > horaInicio) {
                                         ocupadas.add(r.getPlaza().getId());
                                     }
@@ -247,8 +261,8 @@ public class FirebaseDataSource implements DataSource {
     }
 
     @Override
-    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<String> callback) {
-        getAvailablePlazas(tipo, fecha, horaInicio, horaFin, new DataCallback<List<String>>() {
+    public void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<String> callback) {
+        getAvailablePlazas(tipo, fecha, horaInicio, horaFin, excludeReservationId, new DataCallback<List<String>>() {
             @Override
             public void onSuccess(List<String> disponibles) {
                 if (disponibles.isEmpty()) {
@@ -266,7 +280,7 @@ public class FirebaseDataSource implements DataSource {
     }
 
     @Override
-    public void checkAvailability(Reserva reserva, DataCallback<Boolean> callback) {
+    public void checkAvailability(Reserva reserva, String excludeReservationId, DataCallback<Boolean> callback) {
         db.collection("reservas")
                 .whereEqualTo("plaza.id", reserva.getPlaza().getId())
                 .whereEqualTo("fecha", reserva.getFecha())
@@ -276,6 +290,9 @@ public class FirebaseDataSource implements DataSource {
                     boolean available = true;
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Reserva r = doc.toObject(Reserva.class);
+                        if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
+                            continue;
+                        }
                         if (r.getHora().getHoraInicio() < reserva.getHora().getHoraFin() && r.getHora().getHoraFin() > reserva.getHora().getHoraInicio()) {
                             available = false;
                             break;
@@ -300,7 +317,7 @@ public class FirebaseDataSource implements DataSource {
     }
 
     @Override
-    public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback) {
+    public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
         db.collection("plazas")
                 .whereEqualTo("tipo", tipo)
                 .get()
@@ -321,6 +338,9 @@ public class FirebaseDataSource implements DataSource {
                                 List<String> ocupadas = new ArrayList<>();
                                 for (QueryDocumentSnapshot rdoc : reservasSnap) {
                                     Reserva r = rdoc.toObject(Reserva.class);
+                                    if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
+                                        continue;
+                                    }
                                     if (r.getPlaza().getId().startsWith(row + "-") && r.getHora().getHoraInicio() < horaFin && r.getHora().getHoraFin() > horaInicio) {
                                         ocupadas.add(r.getPlaza().getId().split("-")[1]);
                                     }

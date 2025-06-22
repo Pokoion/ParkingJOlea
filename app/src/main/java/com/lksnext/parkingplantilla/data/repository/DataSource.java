@@ -17,7 +17,7 @@ public interface DataSource {
     void createReservation(Reserva reserva, DataCallback<Boolean> callback);
     void deleteReservation(String reservationId, DataCallback<Boolean> callback);
     void updateReservation(Reserva reserva, DataCallback<Boolean> callback);
-    void checkAvailability(Reserva reserva, DataCallback<Boolean> callback);
+    void checkAvailability(Reserva reserva, String excludeReservationId, DataCallback<Boolean> callback);
 
     // User-related methods
     void login(String email, String password, DataCallback<User> callback);
@@ -27,14 +27,14 @@ public interface DataSource {
     void deleteUserReservations(String email, DataCallback<Boolean> callback);
 
     // Plaza-related methods
-    void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback);
-    void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, DataCallback<String> callback);
+    void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback);
+    void assignRandomPlaza(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<String> callback);
     void addPlaza(Plaza plaza, DataCallback<Boolean> callback);
     void deletePlaza(String plazaId, DataCallback<Boolean> callback);
     void deleteReserva(String reservaId, DataCallback<Boolean> callback);
 
     // Números disponibles en una fila concreta
-    void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, DataCallback<List<String>> callback);
+    void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback);
     void checkUserExists(String email, DataCallback<Boolean> callback);
     void sendPasswordResetEmail(String email, DataCallback<Boolean> callback);
     void getAvailableRows(String tipo, DataCallback<List<String>> callback);
