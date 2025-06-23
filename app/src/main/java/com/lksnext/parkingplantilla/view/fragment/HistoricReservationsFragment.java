@@ -61,6 +61,25 @@ public class HistoricReservationsFragment extends Fragment {
             }
         });
 
+        // Observar estado de carga
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            if (isLoading != null && isLoading) {
+                binding.progressBar.setVisibility(View.VISIBLE);
+                binding.recyclerViewReservations.setVisibility(View.GONE);
+                binding.noReservationsText.setVisibility(View.GONE);
+            } else {
+                binding.progressBar.setVisibility(View.GONE);
+                // Mostrar la lista o el texto según si hay reservas
+                if (viewModel.getHistoricReservations().getValue() != null && !viewModel.getHistoricReservations().getValue().isEmpty()) {
+                    binding.recyclerViewReservations.setVisibility(View.VISIBLE);
+                    binding.noReservationsText.setVisibility(View.GONE);
+                } else {
+                    binding.recyclerViewReservations.setVisibility(View.GONE);
+                    binding.noReservationsText.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
         // Cargar reservas históricas
         viewModel.loadHistoricReservations();
     }

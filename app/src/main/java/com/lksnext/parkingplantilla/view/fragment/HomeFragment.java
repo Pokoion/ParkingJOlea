@@ -61,7 +61,13 @@ public class HomeFragment extends Fragment {
 
         // Observar estado de carga
         viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
-            // Implementar indicador de carga si es necesario
+            if (isLoading != null && isLoading) {
+                binding.progressBar.setVisibility(View.VISIBLE);
+                binding.mainContainer.setVisibility(View.INVISIBLE);
+            } else {
+                binding.progressBar.setVisibility(View.GONE);
+                binding.mainContainer.setVisibility(View.VISIBLE);
+            }
         });
 
         // Observar errores

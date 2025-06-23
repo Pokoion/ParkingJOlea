@@ -33,6 +33,17 @@ public class ChangePassActivity extends AppCompatActivity {
             }
         });
 
+        // Observa el estado de carga para mostrar/ocultar el ProgressBar y desactivar el botón
+        changePassViewModel.getIsLoading().observe(this, isLoading -> {
+            if (isLoading != null && isLoading) {
+                binding.progressBar.setVisibility(View.VISIBLE);
+                binding.btnSend.setEnabled(false);
+            } else {
+                binding.progressBar.setVisibility(View.GONE);
+                binding.btnSend.setEnabled(true);
+            }
+        });
+
         binding.btnSend.setOnClickListener(v -> {
             String email = binding.emailText.getText() != null ? binding.emailText.getText().toString().trim() : "";
             if (TextUtils.isEmpty(email)) {
@@ -42,6 +53,8 @@ public class ChangePassActivity extends AppCompatActivity {
             binding.btnSend.setEnabled(false); // Deshabilitar para evitar múltiples envíos
             changePassViewModel.sendPasswordResetEmail(email);
         });
+
+        binding.btnBack.setOnClickListener(v -> finish());
     }
 }
 

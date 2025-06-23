@@ -581,5 +581,18 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
                 viewModel.clearError();
             }
         });
+
+        // Observa el estado de loading para mostrar/ocultar el ProgressBar y desactivar botones
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            if (isLoading != null && isLoading) {
+                binding.progressBar.setVisibility(View.VISIBLE);
+                binding.btnSaveReservation.setEnabled(false);
+                binding.btnNextStep.setEnabled(false);
+            } else {
+                binding.progressBar.setVisibility(View.GONE);
+                binding.btnSaveReservation.setEnabled(true);
+                binding.btnNextStep.setEnabled(true);
+            }
+        });
     }
 }

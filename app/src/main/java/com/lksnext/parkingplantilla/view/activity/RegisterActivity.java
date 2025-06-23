@@ -41,6 +41,11 @@ public class RegisterActivity extends AppCompatActivity {
         // Observe registration process state
         registerViewModel.getIsRegistering().observe(this, isRegistering -> {
             binding.btnRegister.setEnabled(!isRegistering);
+            if (isRegistering) {
+                binding.progressBar.setVisibility(android.view.View.VISIBLE);
+            } else {
+                binding.progressBar.setVisibility(android.view.View.GONE);
+            }
         });
 
         // Observe registration success
@@ -110,3 +115,4 @@ public class RegisterActivity extends AppCompatActivity {
         binding.password.setError(null);
     }
 }
+

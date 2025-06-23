@@ -20,6 +20,14 @@
             android:text="No tienes reservas actuales"
             android:textStyle="italic"
             android:visibility="gone"/>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:indeterminate="true" />
     </FrameLayout>
 </layout>
 

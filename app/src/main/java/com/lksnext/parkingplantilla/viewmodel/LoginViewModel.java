@@ -25,6 +25,7 @@ public class LoginViewModel extends ViewModel {
     private final MutableLiveData<Boolean> logged = new MutableLiveData<>(null);
     private final MutableLiveData<String> currentUserEmail = new MutableLiveData<>(null);
     private final MutableLiveData<LoginError> loginError = new MutableLiveData<>(LoginError.NONE);
+    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
 
     public LoginViewModel() {
         this.repository = ParkingApplication.getRepository();
@@ -50,22 +51,32 @@ public class LoginViewModel extends ViewModel {
         return loginError;
     }
 
+    public LiveData<Boolean> getIsLoading() {
+        return isLoading;
+    }
+
     public void loginUser(String email, String password) {
         loginError.setValue(LoginError.NONE);
+        isLoading.setValue(true);
 
-        if (!validateLoginFields(email, password)) return;
+        if (!validateLoginFields(email, password)) {
+            isLoading.setValue(false);
+            return;
+        }
 
         repository.login(email, password, new DataCallback<User>() {
             @Override
             public void onSuccess(User user) {
                 logged.setValue(true);
                 currentUserEmail.setValue(user.getEmail());
+                isLoading.setValue(false);
             }
             @Override
             public void onFailure(Exception e) {
                 logged.setValue(false);
                 currentUserEmail.setValue(null);
                 loginError.setValue(LoginError.INVALID_CREDENTIALS);
+                isLoading.setValue(false);
             }
         });
     }

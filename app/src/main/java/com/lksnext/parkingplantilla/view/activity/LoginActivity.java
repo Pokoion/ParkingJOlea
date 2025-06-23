@@ -47,6 +47,17 @@ public class LoginActivity extends AppCompatActivity {
                 handleLoginError(error);
             }
         });
+
+        // Observer para el loading
+        loginViewModel.getIsLoading().observe(this, isLoading -> {
+            if (isLoading != null && isLoading) {
+                binding.progressBar.setVisibility(android.view.View.VISIBLE);
+                binding.loginButton.setEnabled(false);
+            } else {
+                binding.progressBar.setVisibility(android.view.View.GONE);
+                binding.loginButton.setEnabled(true);
+            }
+        });
     }
 
     private void setupClickListeners() {
@@ -126,3 +137,4 @@ public class LoginActivity extends AppCompatActivity {
         binding.password.setError(null);
     }
 }
+
