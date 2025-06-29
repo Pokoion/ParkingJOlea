@@ -6,6 +6,7 @@ import androidx.lifecycle.Observer;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 /**
  * Helper class that observes for a pre-specified amount of time a livedata value to be changed.
@@ -34,6 +35,50 @@ public class LiveDataTestUtil {
         //Observe the LiveData forever. Latch timeout will trigger.
         liveData.observeForever(observer);
         latch.await(10, TimeUnit.SECONDS);
+        //noinspection unchecked
+        return (T) data[0];
+    }
+
+    /**
+     * Espera hasta que el valor de LiveData sea igual al esperado o se agote el timeout.
+     */
+    public static <T> T getOrAwaitValue(final LiveData<T> liveData, T expected) throws InterruptedException {
+        final Object[] data = new Object[1];
+        final CountDownLatch latch = new CountDownLatch(1);
+        Observer<T> observer = new Observer<T>() {
+            @Override
+            public void onChanged(@Nullable T o) {
+                if ((expected == null && o == null) || (expected != null && expected.equals(o))) {
+                    data[0] = o;
+                    latch.countDown();
+                    liveData.removeObserver(this);
+                }
+            }
+        };
+        liveData.observeForever(observer);
+        latch.await(10, TimeUnit.SECONDS); // Timeout fijo de 10 segundos
+        //noinspection unchecked
+        return (T) data[0];
+    }
+
+    /**
+     * Espera hasta que el valor de LiveData cumpla el predicado dado o se agote el timeout.
+     */
+    public static <T> T getOrAwaitValue(final LiveData<T> liveData, Predicate<T> predicate) throws InterruptedException {
+        final Object[] data = new Object[1];
+        final CountDownLatch latch = new CountDownLatch(1);
+        Observer<T> observer = new Observer<T>() {
+            @Override
+            public void onChanged(@Nullable T o) {
+                if (predicate.test(o)) {
+                    data[0] = o;
+                    latch.countDown();
+                    liveData.removeObserver(this);
+                }
+            }
+        };
+        liveData.observeForever(observer);
+        latch.await(10, TimeUnit.SECONDS); // Timeout fijo de 10 segundos
         //noinspection unchecked
         return (T) data[0];
     }

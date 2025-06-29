@@ -1,5 +1,6 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
+import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -14,23 +15,35 @@ import com.lksnext.parkingplantilla.utils.Validators;
 public class LoginViewModel extends ViewModel {
 
     public enum LoginError {
-        NONE,
         EMPTY_FIELDS,
         INVALID_CREDENTIALS,
         NETWORK_ERROR,
-        APPLICATION_ERROR
+        APPLICATION_ERROR,
+        ALREADY_LOGGED
     }
 
     private final DataRepository repository;
-    private final MutableLiveData<Boolean> logged = new MutableLiveData<>(null);
-    private final MutableLiveData<String> currentUserEmail = new MutableLiveData<>(null);
-    private final MutableLiveData<LoginError> loginError = new MutableLiveData<>(LoginError.NONE);
-    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> logged = new MutableLiveData<>();
+    private final MutableLiveData<String> currentUserEmail = new MutableLiveData<>();
+    private final MutableLiveData<LoginError> loginError = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
 
     public LoginViewModel() {
         this.repository = ParkingApplication.getRepository();
         // Check if user is already logged in
         if (repository.isUserLoggedIn()) {
+            User currentUser = repository.getCurrentUser();
+            if (currentUser != null) {
+                logged.setValue(true);
+                currentUserEmail.setValue(currentUser.getEmail());
+            }
+        }
+    }
+
+    public LoginViewModel(DataRepository repository) {
+        this.repository = repository;
+        // Check if user is already logged in
+        if (repository != null && repository.isUserLoggedIn()) {
             User currentUser = repository.getCurrentUser();
             if (currentUser != null) {
                 logged.setValue(true);
@@ -56,7 +69,6 @@ public class LoginViewModel extends ViewModel {
     }
 
     public void loginUser(String email, String password) {
-        loginError.setValue(LoginError.NONE);
         isLoading.setValue(true);
 
         if (!validateLoginFields(email, password)) {
@@ -70,25 +82,31 @@ public class LoginViewModel extends ViewModel {
                 logged.setValue(true);
                 currentUserEmail.setValue(user.getEmail());
                 isLoading.setValue(false);
+                loginError.setValue(null);
             }
             @Override
             public void onFailure(Exception e) {
+                Log.e("LoginViewModel", "Login error: " + (e != null ? e.getMessage() : "null"), e);
                 logged.setValue(false);
+                loginError.setValue(null);
                 currentUserEmail.setValue(null);
-                loginError.setValue(LoginError.INVALID_CREDENTIALS);
+                if (e instanceof IllegalStateException && e.getMessage() != null && e.getMessage().contains("sesión activa")) {
+                    loginError.setValue(LoginError.ALREADY_LOGGED);
+                } else {
+                    loginError.setValue(LoginError.INVALID_CREDENTIALS);
+                }
                 isLoading.setValue(false);
             }
         });
     }
 
     public boolean validateLoginFields(String email, String password) {
-        if (!Validators.areLoginFieldsValid(email, password)) {
-            loginError.setValue(LoginError.EMPTY_FIELDS);
-            return false;
-        }
-
         if (repository == null) {
             loginError.setValue(LoginError.APPLICATION_ERROR);
+            return false;
+        }
+        if (!Validators.areLoginFieldsValid(email, password)) {
+            loginError.setValue(LoginError.EMPTY_FIELDS);
             return false;
         }
         return true;
@@ -98,7 +116,7 @@ public class LoginViewModel extends ViewModel {
         repository.logout();
         logged.setValue(false);
         currentUserEmail.setValue(null);
-        loginError.setValue(LoginError.NONE);
+        loginError.setValue(null);
     }
 }
 

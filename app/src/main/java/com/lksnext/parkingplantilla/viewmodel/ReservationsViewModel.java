@@ -14,7 +14,10 @@ import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.utils.DateUtils;
 import com.lksnext.parkingplantilla.notifications.NotificationScheduler;
 import com.lksnext.parkingplantilla.data.UserPreferencesManager;
+import com.lksnext.parkingplantilla.utils.Validators;
+
 import android.content.Context;
+import android.util.Log;
 
 import java.util.List;
 import java.util.UUID;
@@ -28,7 +31,7 @@ public class ReservationsViewModel extends ViewModel {
     private final MutableLiveData<List<Reserva>> historicReservations = new MutableLiveData<>();
     private final MutableLiveData<Reserva> currentReservation = new MutableLiveData<>();
     private final MutableLiveData<Reserva> nextReservation = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
+    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
     private final MutableLiveData<String> error = new MutableLiveData<>();
     private final MutableLiveData<String> randomPlaza = new MutableLiveData<>();
     private final MutableLiveData<List<String>> availableNumbers = new MutableLiveData<>();
@@ -43,6 +46,10 @@ public class ReservationsViewModel extends ViewModel {
 
     public ReservationsViewModel() {
         repository = ParkingApplication.getRepository();
+    }
+
+    public ReservationsViewModel(DataRepository repository) {
+        this.repository = repository;
     }
 
     public LiveData<List<Reserva>> getReservations() {
@@ -207,22 +214,27 @@ public class ReservationsViewModel extends ViewModel {
         if (currentUser != null) {
             isLoading.setValue(true);
             String userId = currentUser.getEmail();
-
             repository.getHistoricReservations(userId, new DataCallback<List<Reserva>>() {
                 @Override
                 public void onSuccess(List<Reserva> result) {
-                    historicReservations.setValue(result);
+                    Log.d("ReservationsViewModel", "Historic reservations loaded: " + result);
+                    if (result == null) {
+                        historicReservations.setValue(new ArrayList<>());
+                    } else {
+                        historicReservations.setValue(result);
+                    }
                     isLoading.setValue(false);
                 }
-
                 @Override
                 public void onFailure(Exception e) {
                     error.setValue(e.getMessage());
                     isLoading.setValue(false);
+                    historicReservations.setValue(new ArrayList<>());
                 }
             });
         } else {
             error.setValue("Usuario no conectado");
+            historicReservations.setValue(new ArrayList<>());
         }
     }
 
@@ -236,6 +248,7 @@ public class ReservationsViewModel extends ViewModel {
             loadUserReservations(userId);
         } else {
             error.setValue("Usuario no conectado");
+            reservations.setValue(new ArrayList<>());
         }
     }
 
@@ -247,7 +260,11 @@ public class ReservationsViewModel extends ViewModel {
         repository.getReservations(userId, new DataCallback<List<Reserva>>() {
             @Override
             public void onSuccess(List<Reserva> result) {
-                reservations.setValue(result);
+                if (result == null) {
+                    reservations.setValue(new ArrayList<>());
+                } else {
+                    reservations.setValue(result);
+                }
                 isLoading.setValue(false);
             }
 
@@ -255,6 +272,7 @@ public class ReservationsViewModel extends ViewModel {
             public void onFailure(Exception e) {
                 error.setValue(e.getMessage());
                 isLoading.setValue(false);
+                reservations.setValue(new ArrayList<>());
             }
         });
     }
@@ -380,6 +398,23 @@ public class ReservationsViewModel extends ViewModel {
             return result;
         }
 
+        // Validación: hora de fin debe ser posterior a la de inicio
+        if (reserva.getHora().getHoraFin() <= reserva.getHora().getHoraInicio()) {
+            error.setValue("La hora de fin debe ser posterior a la de inicio");
+            result.setValue(false);
+            isLoading.setValue(false);
+            return result;
+        }
+
+        // Validación: duración máxima de 9 horas
+        if (!Validators.isValidReservationDuration9h(
+                reserva.getHora().getHoraInicio(), reserva.getHora().getHoraFin())) {
+            error.setValue("La duración máxima de una reserva es de 9 horas");
+            result.setValue(false);
+            isLoading.setValue(false);
+            return result;
+        }
+
         // Asignar el usuario actual a la reserva
         reserva.setUsuario(currentUser.getEmail());
 
@@ -406,12 +441,13 @@ public class ReservationsViewModel extends ViewModel {
                     error.postValue(e.getMessage());
                 } else {
                     error.postValue("Error al crear la reserva: " + e.getMessage());
-                    result.postValue(false);
                 }
+                result.postValue(false);
                 isLoading.postValue(false);
             }
         });
-
+        Log.d("ReservationsViewModel", "Creating reservation: " + reserva.toString());
+        Log.d("ReservationsViewModel", "Devuelve: " + result.getValue());
         return result;
     }
 

@@ -43,7 +43,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // Observe login errors
         loginViewModel.getLoginError().observe(this, error -> {
-            if (error != LoginViewModel.LoginError.NONE) {
+            if (error != null) {
                 handleLoginError(error);
             }
         });

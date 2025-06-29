@@ -9,12 +9,15 @@ import com.lksnext.parkingplantilla.data.DataRepository;
 import com.lksnext.parkingplantilla.domain.DataCallback;
 
 public class ChangePassViewModel extends ViewModel {
-    private final MutableLiveData<String> statusMessage = new MutableLiveData<>("");
-    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>(false);
+    private final MutableLiveData<String> statusMessage = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
     private final DataRepository repository;
 
     public ChangePassViewModel() {
         repository = ParkingApplication.getRepository();
+    }
+    public ChangePassViewModel(DataRepository repository) {
+        this.repository = repository;
     }
 
     public LiveData<String> getStatusMessage() {
@@ -26,6 +29,10 @@ public class ChangePassViewModel extends ViewModel {
     }
 
     public void sendPasswordResetEmail(String email) {
+        if (repository == null) {
+            statusMessage.setValue(null);
+            return;
+        }
         isLoading.setValue(true);
         repository.checkUserExists(email, new DataCallback<Boolean>() {
             @Override
@@ -34,24 +41,24 @@ public class ChangePassViewModel extends ViewModel {
                     repository.sendPasswordResetEmail(email, new DataCallback<Boolean>() {
                         @Override
                         public void onSuccess(Boolean sent) {
-                            statusMessage.postValue("Correo de recuperación enviado. Revisa tu bandeja de entrada.");
-                            isLoading.postValue(false);
+                            statusMessage.setValue("Correo de recuperación enviado. Revisa tu bandeja de entrada.");
+                            isLoading.setValue(false);
                         }
                         @Override
                         public void onFailure(Exception e) {
-                            statusMessage.postValue("Error al enviar el correo: " + e.getMessage());
-                            isLoading.postValue(false);
+                            statusMessage.setValue("Error al enviar el correo: " + e.getMessage());
+                            isLoading.setValue(false);
                         }
                     });
                 } else {
-                    statusMessage.postValue("El email no está registrado.");
-                    isLoading.postValue(false);
+                    statusMessage.setValue("El email no está registrado.");
+                    isLoading.setValue(false);
                 }
             }
             @Override
             public void onFailure(Exception e) {
-                statusMessage.postValue("Error al comprobar el email: " + e.getMessage());
-                isLoading.postValue(false);
+                statusMessage.setValue("Error al comprobar el email: " + e.getMessage());
+                isLoading.setValue(false);
             }
         });
     }

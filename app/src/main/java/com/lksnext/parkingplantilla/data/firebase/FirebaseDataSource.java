@@ -67,28 +67,42 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void register(String name, String email, String password, DataCallback<User> callback) {
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        FirebaseUser firebaseUser = mAuth.getCurrentUser();
-                        if (firebaseUser != null) {
-                            Map<String, Object> userMap = new HashMap<>();
-                            userMap.put("name", name);
-                            userMap.put("email", email);
-                            db.collection("users").document(email).set(userMap)
-                                    .addOnSuccessListener(aVoid -> {
-                                        callback.onSuccess(new User(name, email, null));
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        callback.onFailure(e);
-                                    });
-                        } else {
-                            callback.onFailure(new Exception("Error al crear usuario"));
-                        }
-                    } else {
-                        callback.onFailure(task.getException());
-                    }
-                });
+        // Comprobar si el usuario ya existe antes de registrar
+        checkUserExists(email, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean exists) {
+                if (exists) {
+                    callback.onFailure(new Exception("EMAIL_ALREADY_EXISTS"));
+                    return;
+                }
+                mAuth.createUserWithEmailAndPassword(email, password)
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                                if (firebaseUser != null) {
+                                    Map<String, Object> userMap = new HashMap<>();
+                                    userMap.put("name", name);
+                                    userMap.put("email", email);
+                                    db.collection("users").document(email).set(userMap)
+                                            .addOnSuccessListener(aVoid -> {
+                                                callback.onSuccess(new User(name, email, null));
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                callback.onFailure(e);
+                                            });
+                                } else {
+                                    callback.onFailure(new Exception("Error al crear usuario"));
+                                }
+                            } else {
+                                callback.onFailure(task.getException());
+                            }
+                        });
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
     }
 
     @Override
@@ -402,7 +416,7 @@ public class FirebaseDataSource implements DataSource {
     }
 
     @Override
-    public void deleteUser(String email, DataCallback<Boolean> callback) {
+    public void deleteUser(String email, String password, DataCallback<Boolean> callback) {
         db.collection("users").document(email).delete()
             .addOnSuccessListener(aVoid -> {
                 deleteUserReservations(email, new DataCallback<Boolean>() {
@@ -416,7 +430,7 @@ public class FirebaseDataSource implements DataSource {
                                 .addOnFailureListener(e -> callback.onFailure(e));
                         } else {
                             // Intentar loguear para eliminar si no está logueado
-                            mAuth.signInWithEmailAndPassword(email, "Test1234!")
+                            mAuth.signInWithEmailAndPassword(email, password)
                                 .addOnSuccessListener(authResult -> {
                                     FirebaseUser userToDelete = mAuth.getCurrentUser();
                                     if (userToDelete != null) {

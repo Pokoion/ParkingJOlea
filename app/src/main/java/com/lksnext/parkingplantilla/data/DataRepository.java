@@ -2,6 +2,8 @@ package com.lksnext.parkingplantilla.data;
 
 import android.content.Context;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.lksnext.parkingplantilla.data.firebase.FirebaseDataSource;
 import com.lksnext.parkingplantilla.data.repository.DataSource;
 import com.lksnext.parkingplantilla.domain.Callback;
 import com.lksnext.parkingplantilla.domain.DataCallback;
@@ -29,6 +31,9 @@ public class DataRepository {
     }
 
     public void logout() {
+        if (dataSource instanceof FirebaseDataSource) {
+            FirebaseAuth.getInstance().signOut();
+        }
         preferencesManager.clearUserData();
     }
 
@@ -165,8 +170,8 @@ public class DataRepository {
         dataSource.deleteReserva(reservaId, callback);
     }
 
-    public void deleteUser(String email, DataCallback<Boolean> callback) {
-        dataSource.deleteUser(email, callback);
+    public void deleteUser(String email, String password, DataCallback<Boolean> callback) {
+        dataSource.deleteUser(email, password, callback);
     }
 
     public void deleteUserReservations(String email, DataCallback<Boolean> callback) {

@@ -1,5 +1,7 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -13,7 +15,6 @@ import com.lksnext.parkingplantilla.utils.Validators;
 public class RegisterViewModel extends ViewModel {
 
     public enum RegisterError {
-        NONE,
         INVALID_EMAIL,
         USERNAME_EMPTY,
         PASSWORD_TOO_SHORT,
@@ -23,12 +24,16 @@ public class RegisterViewModel extends ViewModel {
     }
 
     private final DataRepository repository;
-    private final MutableLiveData<Boolean> isRegistering = new MutableLiveData<>(false);
-    private final MutableLiveData<Boolean> registrationSuccess = new MutableLiveData<>(false);
-    private final MutableLiveData<RegisterError> registerError = new MutableLiveData<>(RegisterError.NONE);
+    private final MutableLiveData<Boolean> isRegistering = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> registrationSuccess = new MutableLiveData<>();
+    private final MutableLiveData<RegisterError> registerError = new MutableLiveData<>();
 
     public RegisterViewModel() {
         repository = ParkingApplication.getRepository();
+    }
+
+    public RegisterViewModel(DataRepository repository) {
+        this.repository = repository;
     }
 
     public LiveData<Boolean> getIsRegistering() {
@@ -44,29 +49,40 @@ public class RegisterViewModel extends ViewModel {
     }
 
     public void register(String email, String username, String password) {
-        registerError.setValue(RegisterError.NONE);
         if (!validateRegisterFields(email, username, password)) return;
+        if (repository == null) {
+            isRegistering.setValue(false);
+            registrationSuccess.setValue(false);
+            registerError.setValue(RegisterError.APPLICATION_ERROR);
+            return;
+        }
         isRegistering.setValue(true);
         repository.register(username, email, password, new DataCallback<User>() {
             @Override
             public void onSuccess(User user) {
-                isRegistering.postValue(false);
-                registrationSuccess.postValue(true);
+                isRegistering.setValue(false);
+                registrationSuccess.setValue(true);
             }
 
             @Override
             public void onFailure(Exception e) {
-                isRegistering.postValue(false);
+                Log.e("RegisterViewModel", "Registration failed", e);
+                isRegistering.setValue(false);
+                registrationSuccess.setValue(false);
                 RegisterError error = RegisterError.APPLICATION_ERROR;
                 if (e != null && e.getMessage() != null) {
                     String msg = e.getMessage().toLowerCase();
-                    if (msg.contains("already") || msg.contains("existe") || msg.contains("in use")) {
+                    if (msg.contains("email_already_exists")) {
+                        Log.d("RegisterViewModel", "Email already exists: " + msg);
+                        error = RegisterError.EMAIL_ALREADY_EXISTS;
+                    } else if (msg.contains("already") || msg.contains("existe") || msg.contains("in use")) {
+                        Log.d("RegisterViewModel", "Email already exists: " + msg);
                         error = RegisterError.EMAIL_ALREADY_EXISTS;
                     } else if (msg.contains("network")) {
                         error = RegisterError.NETWORK_ERROR;
                     }
                 }
-                registerError.postValue(error);
+                registerError.setValue(error);
             }
         });
     }

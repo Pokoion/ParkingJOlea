@@ -1,13 +1,12 @@
 package com.lksnext.parkingplantilla.utils;
 
-import android.util.Patterns;
 import java.util.Calendar;
 
 public class Validators {
 
     public static boolean isValidEmail(String email) {
-        return email != null && !email.trim().isEmpty() &&
-                Patterns.EMAIL_ADDRESS.matcher(email).matches();
+        if (email == null || email.trim().isEmpty()) return false;
+        return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
     }
 
     public static boolean isValidUsername(String username) {
@@ -75,5 +74,16 @@ public class Validators {
         double diffHours = diffMillis / (1000.0 * 60 * 60);
         return diffMillis > 0 && diffHours <= maxHours;
     }
-}
 
+    // Nueva validación: duración máxima en milisegundos
+    public static boolean isValidReservationDurationMs(long startMs, long endMs, int maxHours) {
+        long diffMillis = endMs - startMs;
+        double diffHours = diffMillis / (1000.0 * 60 * 60);
+        return diffMillis > 0 && diffHours <= maxHours;
+    }
+
+    // Validación específica para máximo 9 horas
+    public static boolean isValidReservationDuration9h(long startMs, long endMs) {
+        return isValidReservationDurationMs(startMs, endMs, 9);
+    }
+}

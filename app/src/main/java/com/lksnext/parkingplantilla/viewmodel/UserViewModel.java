@@ -29,6 +29,9 @@ public class UserViewModel extends ViewModel {
     public UserViewModel() {
         this.repository = ParkingApplication.getRepository();
     }
+    public UserViewModel(DataRepository repository) {
+        this.repository = repository;
+    }
 
     public void setLoginViewModel(LoginViewModel loginViewModel) {
         this.loginViewModel = loginViewModel;

@@ -18,10 +18,15 @@ import com.lksnext.parkingplantilla.view.activity.LoginActivity;
 public class MainViewModel extends ViewModel {
     private final DataRepository repository;
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> userExists = new MutableLiveData<>(true);
+    private final MutableLiveData<Boolean> userExists = new MutableLiveData<>();
 
     public MainViewModel() {
         repository = ParkingApplication.getRepository();
+        loadCurrentUser();
+    }
+
+    public MainViewModel(DataRepository repository) {
+        this.repository = repository;
         loadCurrentUser();
     }
 
@@ -47,11 +52,11 @@ public class MainViewModel extends ViewModel {
         repository.checkUserExists(user.getEmail(), new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean exists) {
-                userExists.postValue(exists);
+                userExists.setValue(exists);
             }
             @Override
             public void onFailure(Exception e) {
-                userExists.postValue(false);
+                userExists.setValue(false);
             }
         });
     }

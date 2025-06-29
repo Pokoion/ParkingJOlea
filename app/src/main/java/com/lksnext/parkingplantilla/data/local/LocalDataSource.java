@@ -398,13 +398,12 @@ public class LocalDataSource implements DataSource {
     }
 
     @Override
-    public void deleteUser(String email, DataCallback<Boolean> callback) {
+    public void deleteUser(String email, String password, DataCallback<Boolean> callback) {
         final boolean[] userRemoved = {false};
         if (fakeDatabase.containsKey(email)) {
             fakeDatabase.remove(email);
             userRemoved[0] = true;
         }
-        // Eliminar reservas asociadas usando el método separado
         deleteUserReservations(email, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean reservasRemoved) {
