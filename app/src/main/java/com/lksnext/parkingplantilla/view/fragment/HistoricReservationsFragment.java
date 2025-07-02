@@ -1,7 +1,6 @@
 package com.lksnext.parkingplantilla.view.fragment;
 
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,14 +19,17 @@ public class HistoricReservationsFragment extends Fragment {
     private FragmentHistoricReservationsBinding binding;
     private ReservationsViewModel viewModel;
 
-    private Handler refreshHandler = new Handler();
-    private final int REFRESH_INTERVAL_MS = 10000; // 10 segundos
+    private static final int REFRESH_INTERVAL_MS = 10000; // 10 segundos
+    private boolean isFirstLoad = true;
     private final Runnable refreshRunnable = new Runnable() {
         @Override
         public void run() {
             if (isResumed()) {
+                boolean prevFirstLoad = isFirstLoad;
+                isFirstLoad = false;
                 viewModel.loadHistoricReservations();
-                refreshHandler.postDelayed(this, REFRESH_INTERVAL_MS);
+                isFirstLoad = prevFirstLoad;
+                requireView().postDelayed(this, REFRESH_INTERVAL_MS);
             }
         }
     };
@@ -42,58 +44,47 @@ public class HistoricReservationsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Inicializar adaptador
         HistoricReservationsAdapter adapter = new HistoricReservationsAdapter();
         binding.recyclerViewReservations.setAdapter(adapter);
-
-        // Compartir ViewModel con el fragmento padre
         viewModel = new ViewModelProvider(requireActivity()).get(ReservationsViewModel.class);
 
-        // Observar reservas históricas
-        viewModel.getHistoricReservations().observe(getViewLifecycleOwner(), reservas -> {
-            if (reservas != null && !reservas.isEmpty()) {
-                adapter.setReservas(reservas);
-                binding.recyclerViewReservations.setVisibility(View.VISIBLE);
-                binding.noReservationsText.setVisibility(View.GONE);
-            } else {
-                binding.recyclerViewReservations.setVisibility(View.GONE);
-                binding.noReservationsText.setVisibility(View.VISIBLE);
-            }
-        });
+        viewModel.getHistoricReservations().observe(getViewLifecycleOwner(), reservas -> updateHistoricReservationsUI(adapter, reservas));
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), this::updateLoadingUI);
 
-        // Observar estado de carga
-        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
-            if (isLoading != null && isLoading) {
-                binding.progressBar.setVisibility(View.VISIBLE);
-                binding.recyclerViewReservations.setVisibility(View.GONE);
-                binding.noReservationsText.setVisibility(View.GONE);
-            } else {
-                binding.progressBar.setVisibility(View.GONE);
-                // Mostrar la lista o el texto según si hay reservas
-                if (viewModel.getHistoricReservations().getValue() != null && !viewModel.getHistoricReservations().getValue().isEmpty()) {
-                    binding.recyclerViewReservations.setVisibility(View.VISIBLE);
-                    binding.noReservationsText.setVisibility(View.GONE);
-                } else {
-                    binding.recyclerViewReservations.setVisibility(View.GONE);
-                    binding.noReservationsText.setVisibility(View.VISIBLE);
-                }
-            }
-        });
-
-        // Cargar reservas históricas
         viewModel.loadHistoricReservations();
+        isFirstLoad = false;
+    }
+
+    private void updateHistoricReservationsUI(HistoricReservationsAdapter adapter, java.util.List<com.lksnext.parkingplantilla.domain.Reserva> reservas) {
+        boolean hasReservas = reservas != null && !reservas.isEmpty();
+        adapter.setReservas(reservas);
+        binding.recyclerViewReservations.setVisibility(hasReservas ? View.VISIBLE : View.GONE);
+        binding.noReservationsText.setVisibility(hasReservas ? View.GONE : View.VISIBLE);
+    }
+
+    private void updateLoadingUI(Boolean isLoading) {
+        boolean hasReservas = viewModel.getHistoricReservations().getValue() != null && !viewModel.getHistoricReservations().getValue().isEmpty();
+        if (Boolean.TRUE.equals(isLoading) && isFirstLoad) {
+            binding.progressBar.setVisibility(View.VISIBLE);
+            binding.recyclerViewReservations.setVisibility(View.GONE);
+            binding.noReservationsText.setVisibility(View.GONE);
+        } else {
+            binding.progressBar.setVisibility(View.GONE);
+            binding.recyclerViewReservations.setVisibility(hasReservas ? View.VISIBLE : View.GONE);
+            binding.noReservationsText.setVisibility(hasReservas ? View.GONE : View.VISIBLE);
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        refreshHandler.postDelayed(refreshRunnable, REFRESH_INTERVAL_MS);
+        requireView().postDelayed(refreshRunnable, REFRESH_INTERVAL_MS);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        refreshHandler.removeCallbacks(refreshRunnable);
+        requireView().removeCallbacks(refreshRunnable);
     }
 
     @Override

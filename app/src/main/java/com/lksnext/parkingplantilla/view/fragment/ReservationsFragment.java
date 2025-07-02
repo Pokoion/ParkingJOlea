@@ -19,7 +19,6 @@ import com.lksnext.parkingplantilla.viewmodel.ReservationsViewModel;
 public class ReservationsFragment extends Fragment {
 
     private FragmentReservationsBinding binding;
-    private ReservationsViewModel viewModel;
 
     public ReservationsFragment() {
         // Constructor vacío requerido
@@ -35,8 +34,8 @@ public class ReservationsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Inicializar ViewModel
-        viewModel = new ViewModelProvider(this).get(ReservationsViewModel.class);
+        // Inicializar ViewModel como variable local
+        ReservationsViewModel viewModel = new ViewModelProvider(this).get(ReservationsViewModel.class);
 
         // Configurar ViewPager2 y TabLayout
         setupViewPager();
@@ -65,3 +64,4 @@ public class ReservationsFragment extends Fragment {
         binding = null;
     }
 }
+

@@ -3,7 +3,6 @@ package com.lksnext.parkingplantilla.view.fragment;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +31,8 @@ import java.util.Calendar;
 import java.util.List;
 
 public class CreateReservationFragment extends Fragment implements ReservationTypeAdapter.OnTypeSelectedListener {
+    private static final String NO_DISPONIBLE = "No disponible";
+
     private FragmentCreateReservationBinding binding;
     private Calendar selectedDate = Calendar.getInstance();
     private Calendar startTime = Calendar.getInstance();
@@ -41,15 +42,8 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
     private boolean isEditMode = false;
     private String reservationId = null;
     private ReservationsViewModel viewModel;
-
-    private boolean isOnSpotSelectionStep = false;
-    private String selectedPlazaId = null;
-    private String selectedRow = null;
-    private String selectedNumber = null;
-
     private String selectedRowManual = null;
     private String selectedNumberManual = null;
-
     private List<String> availablePlazas = new ArrayList<>();
     private String returnFragmentTag = null;
 
@@ -65,20 +59,30 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         viewModel = new ViewModelProvider(requireActivity()).get(ReservationsViewModel.class);
+        setupToolbar();
+        binding.btnNextStep.setEnabled(false);
+        binding.btnNextStep.setAlpha(0.5f);
+        binding.btnNextStep.setClickable(false);
+        setupReservationTypes();
+        restoreTempSelectionIfExists();
+        handleArguments(getArguments());
+        setupListeners();
+        setupSpotSelectionUI();
+        observeViewModel();
+    }
 
-        // Configurar la flecha de retroceso en la toolbar
+    private void setupToolbar() {
         binding.toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
         binding.toolbar.setNavigationOnClickListener(v -> {
+            // Limpiar selección temporal SOLO al salir del flujo de crear reserva
+            viewModel.clearTempSelection();
             NavController navController = Navigation.findNavController(requireActivity(), R.id.flFragment);
             navController.popBackStack(R.id.mainFragment, false);
         });
         binding.toolbar.setTitle(isEditMode ? "Editar Reserva" : "Nueva Reserva");
+    }
 
-        binding.btnNextStep.setEnabled(false); // Desactivar por defecto
-
-        setupReservationTypes(); // Inicializar el adapter ANTES de usarlo
-
-        // Restaurar selección temporal si existe
+    private void restoreTempSelectionIfExists() {
         if (viewModel.getTempSelectedType() != null) {
             selectedType = viewModel.getTempSelectedType();
             Calendar tempDate = viewModel.getTempSelectedDate();
@@ -88,51 +92,45 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
             if (tempStart != null) startTime = (Calendar) tempStart.clone();
             if (tempEnd != null) endTime = (Calendar) tempEnd.clone();
             reservationId = viewModel.getTempReservationId();
-            // Actualizar UI
-            binding.datePickerButton.setText(DateUtils.formatDateForUi(selectedDate));
-            binding.startTimeButton.setText(DateUtils.formatTimeFromMs(DateUtils.timeToMs(startTime.get(Calendar.HOUR_OF_DAY), startTime.get(Calendar.MINUTE))));
-            binding.endTimeButton.setText(DateUtils.formatTimeFromMs(DateUtils.timeToMs(endTime.get(Calendar.HOUR_OF_DAY), endTime.get(Calendar.MINUTE))));
+            updateDateTimeUI();
             if (adapter != null) adapter.selectType(selectedType);
             checkAvailableSpots();
         }
+    }
 
-        // Obtener argumentos
-        Bundle args = getArguments();
-        if (args != null) {
-            isEditMode = args.getBoolean("EDIT_MODE", false);
-            reservationId = args.getString("RESERVATION_ID");
-            returnFragmentTag = args.getString("RETURN_FRAGMENT_TAG", "mainFragment");
-            if (isEditMode) {
-                // Cargar datos de la reserva para edición
-                selectedType = args.getString("RESERVATION_TYPE");
-                String dateStr = args.getString("RESERVATION_DATE");
-                long startMs = args.getLong("RESERVATION_START_TIME", -1);
-                long endMs = args.getLong("RESERVATION_END_TIME", -1);
-                // Actualizar variables
-                if (selectedType != null) {
-                    if (adapter != null) adapter.selectType(selectedType);
-                }
-                if (dateStr != null) {
-                    selectedDate = DateUtils.parseDateForApiToCalendar(dateStr);
-                    binding.datePickerButton.setText(DateUtils.formatDateForUi(selectedDate));
-                }
-                if (startMs != -1) {
-                    startTime = DateUtils.combineDateAndTimeMs(selectedDate, startMs);
-                    binding.startTimeButton.setText(DateUtils.formatTimeFromMs(startMs));
-                }
-                if (endMs != -1) {
-                    endTime = DateUtils.combineDateAndTimeMs(selectedDate, endMs);
-                    binding.endTimeButton.setText(DateUtils.formatTimeFromMs(endMs));
-                }
-                // Puedes guardar spotId si lo necesitas para el siguiente paso
-                // Actualizar UI y comprobar plazas
-                checkAvailableSpots();
+    private void updateDateTimeUI() {
+        binding.datePickerButton.setText(DateUtils.formatDateForUi(selectedDate));
+        binding.startTimeButton.setText(DateUtils.formatTimeFromMs(DateUtils.timeToMs(startTime.get(Calendar.HOUR_OF_DAY), startTime.get(Calendar.MINUTE))));
+        binding.endTimeButton.setText(DateUtils.formatTimeFromMs(DateUtils.timeToMs(endTime.get(Calendar.HOUR_OF_DAY), endTime.get(Calendar.MINUTE))));
+    }
+
+    private void handleArguments(Bundle args) {
+        if (args == null) return;
+        isEditMode = args.getBoolean("EDIT_MODE", false);
+        reservationId = args.getString("RESERVATION_ID");
+        returnFragmentTag = args.getString("RETURN_FRAGMENT_TAG", "mainFragment");
+        if (isEditMode) {
+            selectedType = args.getString("RESERVATION_TYPE");
+            String dateStr = args.getString("RESERVATION_DATE");
+            long startMs = args.getLong("RESERVATION_START_TIME", -1);
+            long endMs = args.getLong("RESERVATION_END_TIME", -1);
+            if (selectedType != null && adapter != null) {
+                adapter.selectType(selectedType);
             }
+            if (dateStr != null) {
+                selectedDate = DateUtils.parseDateForApiToCalendar(dateStr);
+                binding.datePickerButton.setText(DateUtils.formatDateForUi(selectedDate));
+            }
+            if (startMs != -1) {
+                startTime = DateUtils.combineDateAndTimeMs(selectedDate, startMs);
+                binding.startTimeButton.setText(DateUtils.formatTimeFromMs(startMs));
+            }
+            if (endMs != -1) {
+                endTime = DateUtils.combineDateAndTimeMs(selectedDate, endMs);
+                binding.endTimeButton.setText(DateUtils.formatTimeFromMs(endMs));
+            }
+            checkAvailableSpots();
         }
-
-        setupListeners();
-        setupSpotSelectionUI();
-        observeViewModel();
     }
 
     private void setupListeners() {
@@ -140,6 +138,7 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         binding.startTimeButton.setOnClickListener(v -> showTimePicker(true));
         binding.endTimeButton.setOnClickListener(v -> showTimePicker(false));
         binding.btnNextStep.setOnClickListener(v -> {
+            // Solo permitir avanzar si el botón está habilitado
             if (binding.btnNextStep.isEnabled()) {
                 onNextStep();
             }
@@ -206,7 +205,6 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
                         tempStart.set(Calendar.MINUTE, minute);
                         tempStart.set(Calendar.SECOND, 0);
                         tempStart.set(Calendar.MILLISECOND, 0);
-                        Log.d("RESERVA_DEBUG", "now: " + now.getTimeInMillis() + " (" + DateUtils.formatTimeFromMs(now.getTimeInMillis()) + ") tempStart: " + tempStart.getTimeInMillis() + " (" + DateUtils.formatTimeFromMs(tempStart.getTimeInMillis()) + ")");
                         if (tempStart.before(now)) {
                             Toast.makeText(requireContext(), "La hora de inicio no puede ser anterior a la actual", Toast.LENGTH_SHORT).show();
                             return;
@@ -261,53 +259,57 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
 
     private void checkAvailableSpots() {
         if (!isValidDateAndTime() || selectedType == null) {
-            binding.availableSpotsText.setText("");
-            binding.btnNextStep.setEnabled(false);
-            binding.btnNextStep.setAlpha(0.5f); // Botón transparente
+            updateAvailableSpotsUI("", false);
             return;
         }
-        // Comprobar si ya hay reserva ese día
+        updateAvailablePlazas(); // <-- Actualiza availablePlazas cada vez que cambian los filtros
         String apiDate = DateUtils.formatDateForApi(selectedDate);
         viewModel.checkUserHasReservationOnDate(apiDate).observe(getViewLifecycleOwner(), hasReservation -> {
             if (hasReservation != null && hasReservation && !(isEditMode && reservationId != null)) {
-                binding.availableSpotsText.setText("Ya tienes una reserva para este día");
-                binding.btnNextStep.setEnabled(false);
-                binding.btnNextStep.setAlpha(0.5f);
+                updateAvailableSpotsUI("Ya tienes una reserva para este día", false);
             } else {
-                // Lógica original
-                long startTimeMs = DateUtils.timeToMs(
-                        startTime.get(Calendar.HOUR_OF_DAY),
-                        startTime.get(Calendar.MINUTE));
-                long endTimeMs = DateUtils.timeToMs(
-                        endTime.get(Calendar.HOUR_OF_DAY),
-                        endTime.get(Calendar.MINUTE));
-                if (isEditMode && reservationId != null) {
-                    viewModel.getAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs, reservationId).observe(getViewLifecycleOwner(), plazas -> {
-                        if (plazas != null && !plazas.isEmpty()) {
-                            binding.availableSpotsText.setText("Plazas disponibles: " + plazas.size());
-                            binding.btnNextStep.setEnabled(true);
-                            binding.btnNextStep.setAlpha(1.0f); // Botón opaco
-                        } else {
-                            binding.availableSpotsText.setText("No hay plazas disponibles para esta fecha y hora");
-                            binding.btnNextStep.setEnabled(false);
-                            binding.btnNextStep.setAlpha(0.5f); // Botón transparente
-                        }
-                    });
-                } else {
-                    viewModel.getAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs).observe(getViewLifecycleOwner(), plazas -> {
-                        if (plazas != null && !plazas.isEmpty()) {
-                            binding.availableSpotsText.setText("Plazas disponibles: " + plazas.size());
-                            binding.btnNextStep.setEnabled(true);
-                            binding.btnNextStep.setAlpha(1.0f); // Botón opaco
-                        } else {
-                            binding.availableSpotsText.setText("No hay plazas disponibles para esta fecha y hora");
-                            binding.btnNextStep.setEnabled(false);
-                            binding.btnNextStep.setAlpha(0.5f); // Botón transparente
-                        }
-                    });
-                }
+                fetchAndDisplayAvailableSpots(apiDate);
             }
         });
+    }
+
+    private void updateAvailablePlazas() {
+        String apiDate = DateUtils.formatDateForApi(selectedDate);
+        long startTimeMs = DateUtils.timeToMs(startTime.get(Calendar.HOUR_OF_DAY), startTime.get(Calendar.MINUTE));
+        long endTimeMs = DateUtils.timeToMs(endTime.get(Calendar.HOUR_OF_DAY), endTime.get(Calendar.MINUTE));
+        if (isEditMode && reservationId != null) {
+            viewModel.getAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs, reservationId).observe(getViewLifecycleOwner(), plazas -> availablePlazas = plazas != null ? plazas : new ArrayList<>());
+        } else {
+            viewModel.getAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs).observe(getViewLifecycleOwner(), plazas -> availablePlazas = plazas != null ? plazas : new ArrayList<>());
+        }
+    }
+
+    private void fetchAndDisplayAvailableSpots(String apiDate) {
+        long startTimeMs = DateUtils.timeToMs(startTime.get(Calendar.HOUR_OF_DAY), startTime.get(Calendar.MINUTE));
+        long endTimeMs = DateUtils.timeToMs(endTime.get(Calendar.HOUR_OF_DAY), endTime.get(Calendar.MINUTE));
+        if (isEditMode && reservationId != null) {
+            viewModel.getAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs, reservationId)
+                .observe(getViewLifecycleOwner(), this::handleAvailablePlazasResult);
+        } else {
+            viewModel.getAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs)
+                .observe(getViewLifecycleOwner(), this::handleAvailablePlazasResult);
+        }
+    }
+
+    private void handleAvailablePlazasResult(List<String> plazas) {
+        if (plazas != null && !plazas.isEmpty()) {
+            updateAvailableSpotsUI("Plazas disponibles: " + plazas.size(), true);
+        } else {
+            updateAvailableSpotsUI("No hay plazas disponibles para esta fecha y hora", false);
+        }
+    }
+
+    private void updateAvailableSpotsUI(String message, boolean enableNextStep) {
+        binding.availableSpotsText.setText(message);
+        binding.btnNextStep.setEnabled(enableNextStep);
+        binding.btnNextStep.setAlpha(enableNextStep ? 1.0f : 0.5f);
+        // Deshabilitar el click si no está habilitado
+        binding.btnNextStep.setClickable(enableNextStep);
     }
 
     private void onNextStep() {
@@ -349,66 +351,78 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         long startTimeMs = DateUtils.timeToMs(startTime.get(Calendar.HOUR_OF_DAY), startTime.get(Calendar.MINUTE));
         long endTimeMs = DateUtils.timeToMs(endTime.get(Calendar.HOUR_OF_DAY), endTime.get(Calendar.MINUTE));
         if (isEditMode && reservationId != null) {
-            viewModel.getAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs, reservationId).observe(getViewLifecycleOwner(), plazas -> {
-                availablePlazas = plazas != null ? plazas : new ArrayList<>();
-            });
+            viewModel.getAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs, reservationId).observe(getViewLifecycleOwner(), plazas -> availablePlazas = plazas != null ? plazas : new ArrayList<>());
         } else {
-            viewModel.getAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs).observe(getViewLifecycleOwner(), plazas -> {
-                availablePlazas = plazas != null ? plazas : new ArrayList<>();
-            });
+            viewModel.getAvailablePlazas(selectedType, apiDate, startTimeMs, endTimeMs).observe(getViewLifecycleOwner(), plazas -> availablePlazas = plazas != null ? plazas : new ArrayList<>());
         }
     }
 
     private void updateRowSpinner(List<String> rows) {
-        List<String> displayRows = new ArrayList<>();
-        if (rows == null || rows.isEmpty()) {
-            displayRows.add("No disponible");
-            binding.parkingRowSpinner.setEnabled(false);
-        } else {
-            displayRows.addAll(rows);
-            binding.parkingRowSpinner.setEnabled(true);
-        }
-        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(requireContext(),
-                android.R.layout.simple_spinner_item, displayRows);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        binding.parkingRowSpinner.setAdapter(adapter);
-        // Preseleccionar fila si es edición
-        if (isEditMode && selectedRowManual != null && displayRows.contains(selectedRowManual)) {
-            binding.parkingRowSpinner.setSelection(displayRows.indexOf(selectedRowManual));
-        } else if (!displayRows.isEmpty() && binding.parkingRowSpinner.getCount() > 0) {
-            binding.parkingRowSpinner.setSelection(0);
-        }
+        List<String> displayRows = getDisplayRows(rows);
+        binding.parkingRowSpinner.setEnabled(!displayRows.isEmpty() && !NO_DISPONIBLE.equals(displayRows.get(0)));
+        setRowSpinnerAdapter(displayRows);
+        preselectRowSpinner(displayRows);
         binding.parkingRowSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                String selectedRow = (String) parent.getItemAtPosition(position);
-                if (selectedRow != null && !selectedRow.equals("No disponible")) {
-                    // Filtrar los números de la fila seleccionada a partir de availablePlazas
-                    List<String> filteredNumbers = new ArrayList<>();
-                    for (String plazaId : availablePlazas) {
-                        String[] parts = plazaId.split("-");
-                        if (parts.length == 2 && parts[0].equals(selectedRow)) {
-                            filteredNumbers.add(parts[1]);
-                        }
-                    }
-                    updateNumberSpinner(filteredNumbers);
+                String selectedRowSpinner = (String) parent.getItemAtPosition(position);
+                if (selectedRowSpinner != null && !selectedRowSpinner.equals(NO_DISPONIBLE)) {
+                    updateNumberSpinner(getFilteredNumbers(selectedRowSpinner));
                 } else {
                     updateNumberSpinner(new ArrayList<>());
                 }
             }
             @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
+                // No hacer nada
+            }
         });
+    }
+
+    private List<String> getDisplayRows(List<String> rows) {
+        List<String> displayRows = new ArrayList<>();
+        if (rows == null || rows.isEmpty()) {
+            displayRows.add(NO_DISPONIBLE);
+        } else {
+            displayRows.addAll(rows);
+        }
+        return displayRows;
+    }
+
+    private void setRowSpinnerAdapter(List<String> displayRows) {
+        android.widget.ArrayAdapter<String> rowSpinnerAdapter = new android.widget.ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_item, displayRows);
+        rowSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        binding.parkingRowSpinner.setAdapter(rowSpinnerAdapter);
+    }
+
+    private void preselectRowSpinner(List<String> displayRows) {
+        if (isEditMode && selectedRowManual != null && displayRows.contains(selectedRowManual)) {
+            binding.parkingRowSpinner.setSelection(displayRows.indexOf(selectedRowManual));
+        } else if (!displayRows.isEmpty() && binding.parkingRowSpinner.getCount() > 0) {
+            binding.parkingRowSpinner.setSelection(0);
+        }
+    }
+
+    private List<String> getFilteredNumbers(String selectedRowSpinner) {
+        List<String> filteredNumbers = new ArrayList<>();
+        for (String plazaId : availablePlazas) {
+            String[] parts = plazaId.split("-");
+            if (parts.length == 2 && parts[0].equals(selectedRowSpinner)) {
+                filteredNumbers.add(parts[1]);
+            }
+        }
+        return filteredNumbers;
     }
 
     private void updateNumberSpinner(List<String> numbers) {
         List<String> displayNumbers = new ArrayList<>();
         if (numbers == null || numbers.isEmpty()) {
             if (binding.parkingRowSpinner.getSelectedItem() == null ||
-                "No disponible".equals(binding.parkingRowSpinner.getSelectedItem().toString())) {
+                NO_DISPONIBLE.equals(binding.parkingRowSpinner.getSelectedItem().toString())) {
                 displayNumbers.add("Selecciona fila para ver números");
             } else {
-                displayNumbers.add("No disponible");
+                displayNumbers.add(NO_DISPONIBLE);
             }
             binding.parkingNumberSpinner.setEnabled(false);
             binding.btnSaveReservation.setEnabled(false);
@@ -417,10 +431,10 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
             binding.parkingNumberSpinner.setEnabled(true);
             binding.btnSaveReservation.setEnabled(true);
         }
-        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(requireContext(),
+        android.widget.ArrayAdapter<String> numberSpinnerAdapter = new android.widget.ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_spinner_item, displayNumbers);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        binding.parkingNumberSpinner.setAdapter(adapter);
+        numberSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        binding.parkingNumberSpinner.setAdapter(numberSpinnerAdapter);
         // Preseleccionar número si es edición
         if (isEditMode && selectedNumberManual != null && displayNumbers.contains(selectedNumberManual)) {
             binding.parkingNumberSpinner.setSelection(displayNumbers.indexOf(selectedNumberManual));
@@ -430,7 +444,6 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
     }
 
     private void showStep1() {
-        isOnSpotSelectionStep = false;
         binding.step1Container.setVisibility(View.VISIBLE);
         binding.spotSelectionContainer.setVisibility(View.GONE);
         binding.btnSaveReservation.setVisibility(View.GONE);
@@ -439,13 +452,14 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         // Cambiar icono de la toolbar para volver atrás según modo
         binding.toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
         binding.toolbar.setNavigationOnClickListener(v -> {
+            // Limpiar selección temporal SOLO al salir del flujo de crear reserva
+            viewModel.clearTempSelection();
             NavController navController = Navigation.findNavController(requireActivity(), R.id.flFragment);
             navController.popBackStack(R.id.mainFragment, false);
         });
     }
 
     private void showStep2() {
-        isOnSpotSelectionStep = true;
         binding.step1Container.setVisibility(View.GONE);
         binding.spotSelectionContainer.setVisibility(View.VISIBLE);
         binding.btnSaveReservation.setVisibility(View.VISIBLE);
@@ -459,36 +473,45 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         long startTimeMs = DateUtils.timeToMs(startTime.get(Calendar.HOUR_OF_DAY), startTime.get(Calendar.MINUTE));
         long endTimeMs = DateUtils.timeToMs(endTime.get(Calendar.HOUR_OF_DAY), endTime.get(Calendar.MINUTE));
         if (isEditMode && reservationId != null) {
-            // Obtener la plaza de la reserva para preseleccionar
-            Reserva reservaEdit = null;
-            List<Reserva> reservas = viewModel.getReservations().getValue();
-            if (reservas != null) {
-                for (Reserva r : reservas) {
-                    if (reservationId.equals(r.getId())) {
-                        reservaEdit = r;
-                        break;
-                    }
-                }
-            }
-            if (reservaEdit != null && reservaEdit.getPlaza() != null) {
-                String plazaId = reservaEdit.getPlaza().getId();
-                if (plazaId != null && plazaId.contains("-")) {
-                    String[] parts = plazaId.split("-");
-                    selectedRowManual = parts[0];
-                    selectedNumberManual = parts[1];
-                }
-            }
-            // Seleccionar manual por defecto
-            binding.manualParkingRadioButton.setChecked(true);
-            binding.parkingManualSelectionContainer.setVisibility(View.VISIBLE);
+            preselectManualSpotIfEditing();
             viewModel.loadAvailablePlazasAndExtractRowsNumbers(selectedType, apiDate, startTimeMs, endTimeMs, reservationId);
         } else {
-            binding.randomParkingRadioButton.setChecked(true);
-            binding.parkingManualSelectionContainer.setVisibility(View.GONE);
+            setRandomSpotSelectionUI();
             viewModel.loadAvailablePlazasAndExtractRowsNumbers(selectedType, apiDate, startTimeMs, endTimeMs);
         }
         // Cambiar texto del botón según modo
         binding.btnSaveReservation.setText(isEditMode ? "Actualizar reserva" : "Crear reserva");
+    }
+
+    private void preselectManualSpotIfEditing() {
+        Reserva reservaEdit = getReservaEdit();
+        if (reservaEdit != null && reservaEdit.getPlaza() != null) {
+            String plazaId = reservaEdit.getPlaza().getId();
+            if (plazaId != null && plazaId.contains("-")) {
+                String[] parts = plazaId.split("-");
+                selectedRowManual = parts[0];
+                selectedNumberManual = parts[1];
+            }
+        }
+        binding.manualParkingRadioButton.setChecked(true);
+        binding.parkingManualSelectionContainer.setVisibility(View.VISIBLE);
+    }
+
+    private Reserva getReservaEdit() {
+        List<Reserva> reservas = viewModel.getReservations().getValue();
+        if (reservas != null) {
+            for (Reserva r : reservas) {
+                if (reservationId.equals(r.getId())) {
+                    return r;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void setRandomSpotSelectionUI() {
+        binding.randomParkingRadioButton.setChecked(true);
+        binding.parkingManualSelectionContainer.setVisibility(View.GONE);
     }
 
     private void validateAndSaveSpotSelection() {
@@ -563,12 +586,12 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         if (binding.manualParkingRadioButton.isChecked() &&
                 binding.parkingRowSpinner.getSelectedItem() != null &&
                 binding.parkingNumberSpinner.getSelectedItem() != null) {
-            String selectedNumber = binding.parkingNumberSpinner.getSelectedItem().toString();
-            if ("No disponible".equals(selectedNumber)) {
+            String selectedNumberStr = binding.parkingNumberSpinner.getSelectedItem().toString();
+            if (NO_DISPONIBLE.equals(selectedNumberStr)) {
                 return null;
             }
             String row = binding.parkingRowSpinner.getSelectedItem().toString();
-            return row + "-" + selectedNumber;
+            return row + "-" + selectedNumberStr;
         }
         return null;
     }
@@ -588,10 +611,11 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
                 binding.progressBar.setVisibility(View.VISIBLE);
                 binding.btnSaveReservation.setEnabled(false);
                 binding.btnNextStep.setEnabled(false);
+                binding.btnNextStep.setAlpha(0.5f);
+                binding.btnNextStep.setClickable(false);
             } else {
                 binding.progressBar.setVisibility(View.GONE);
                 binding.btnSaveReservation.setEnabled(true);
-                binding.btnNextStep.setEnabled(true);
             }
         });
     }

@@ -17,7 +17,6 @@ import com.lksnext.parkingplantilla.data.UserPreferencesManager;
 import com.lksnext.parkingplantilla.utils.Validators;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +24,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 public class ReservationsViewModel extends ViewModel {
+
+    private static final String ERROR_USUARIO_NO_CONECTADO = "Usuario no conectado";
+    private static final String NOTIF_SUFFIX_START = "_start";
+    private static final String NOTIF_SUFFIX_END = "_end";
 
     private final DataRepository repository;
     private final MutableLiveData<List<Reserva>> reservations = new MutableLiveData<>();
@@ -45,7 +48,7 @@ public class ReservationsViewModel extends ViewModel {
     private String tempReservationId;
 
     public ReservationsViewModel() {
-        repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
     }
 
     public ReservationsViewModel(DataRepository repository) {
@@ -161,7 +164,7 @@ public class ReservationsViewModel extends ViewModel {
                 }
             });
         } else {
-            error.setValue("Usuario no conectado");
+            error.setValue(ERROR_USUARIO_NO_CONECTADO);
             currentReservation.setValue(null);
         }
     }
@@ -176,10 +179,8 @@ public class ReservationsViewModel extends ViewModel {
                 public void onSuccess(List<Reserva> result) {
                     Reserva next = null;
                     for (Reserva r : result) {
-                        if (DateUtils.isFutureReservation(r)) {
-                            if (next == null || DateUtils.getReservaDateTime(r).before(DateUtils.getReservaDateTime(next))) {
-                                next = r;
-                            }
+                        if (DateUtils.isFutureReservation(r) && (next == null || DateUtils.getReservaDateTime(r).before(DateUtils.getReservaDateTime(next)))) {
+                            next = r;
                         }
                     }
                     nextReservation.setValue(next);
@@ -193,7 +194,7 @@ public class ReservationsViewModel extends ViewModel {
                 }
             });
         } else {
-            error.setValue("Usuario no conectado");
+            error.setValue(ERROR_USUARIO_NO_CONECTADO);
             nextReservation.setValue(null);
         }
     }
@@ -217,7 +218,6 @@ public class ReservationsViewModel extends ViewModel {
             repository.getHistoricReservations(userId, new DataCallback<List<Reserva>>() {
                 @Override
                 public void onSuccess(List<Reserva> result) {
-                    Log.d("ReservationsViewModel", "Historic reservations loaded: " + result);
                     if (result == null) {
                         historicReservations.setValue(new ArrayList<>());
                     } else {
@@ -233,7 +233,7 @@ public class ReservationsViewModel extends ViewModel {
                 }
             });
         } else {
-            error.setValue("Usuario no conectado");
+            error.setValue(ERROR_USUARIO_NO_CONECTADO);
             historicReservations.setValue(new ArrayList<>());
         }
     }
@@ -247,7 +247,7 @@ public class ReservationsViewModel extends ViewModel {
             String userId = currentUser.getEmail();
             loadUserReservations(userId);
         } else {
-            error.setValue("Usuario no conectado");
+            error.setValue(ERROR_USUARIO_NO_CONECTADO);
             reservations.setValue(new ArrayList<>());
         }
     }
@@ -291,7 +291,7 @@ public class ReservationsViewModel extends ViewModel {
                 startReminderTime,
                 "Tu reserva está por comenzar",
                 "Tu reserva de parking comienza en 30 minutos.",
-                reservaId + "_start"
+                reservaId + NOTIF_SUFFIX_START
             );
         }
         // Notificación de fin (15 min antes de terminar)
@@ -301,7 +301,7 @@ public class ReservationsViewModel extends ViewModel {
                 endReminderTime,
                 "Tu reserva está por terminar",
                 "Tu reserva de parking termina en 15 minutos.",
-                reservaId + "_end"
+                reservaId + NOTIF_SUFFIX_END
             );
         }
     }
@@ -309,14 +309,14 @@ public class ReservationsViewModel extends ViewModel {
     private void cancelReservationNotifications(Reserva reserva) {
         Context context = ParkingApplication.getAppContext();
         String reservaId = reserva.getId();
-        NotificationScheduler.cancelReservationNotification(context, reservaId + "_start");
-        NotificationScheduler.cancelReservationNotification(context, reservaId + "_end");
+        NotificationScheduler.cancelReservationNotification(context, reservaId + NOTIF_SUFFIX_START);
+        NotificationScheduler.cancelReservationNotification(context, reservaId + NOTIF_SUFFIX_END);
     }
 
     private void cancelReservationNotifications(String reservaId) {
         Context context = ParkingApplication.getAppContext();
-        NotificationScheduler.cancelReservationNotification(context, reservaId + "_start");
-        NotificationScheduler.cancelReservationNotification(context, reservaId + "_end");
+        NotificationScheduler.cancelReservationNotification(context, reservaId + NOTIF_SUFFIX_START);
+        NotificationScheduler.cancelReservationNotification(context, reservaId + NOTIF_SUFFIX_END);
     }
 
     /**
@@ -392,7 +392,7 @@ public class ReservationsViewModel extends ViewModel {
 
         User currentUser = repository.getCurrentUser();
         if (currentUser == null) {
-            error.setValue("Usuario no conectado");
+            error.setValue(ERROR_USUARIO_NO_CONECTADO);
             result.setValue(false);
             isLoading.setValue(false);
             return result;
@@ -446,8 +446,6 @@ public class ReservationsViewModel extends ViewModel {
                 isLoading.postValue(false);
             }
         });
-        Log.d("ReservationsViewModel", "Creating reservation: " + reserva.toString());
-        Log.d("ReservationsViewModel", "Devuelve: " + result.getValue());
         return result;
     }
 
@@ -460,7 +458,7 @@ public class ReservationsViewModel extends ViewModel {
 
         User currentUser = repository.getCurrentUser();
         if (currentUser == null) {
-            error.setValue("Usuario no conectado");
+            error.setValue(ERROR_USUARIO_NO_CONECTADO);
             result.setValue(false);
             isLoading.setValue(false);
             return result;

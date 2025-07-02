@@ -8,6 +8,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.lksnext.parkingplantilla.R;
@@ -50,14 +51,16 @@ public class ReservationTypeAdapter extends RecyclerView.Adapter<ReservationType
                 holder.itemView.getContext().getPackageName());
         holder.typeIcon.setImageResource(resourceId);
 
+        int colorPrimary = ContextCompat.getColor(holder.itemView.getContext(), R.color.colorPrimary);
+        int colorContainerBackground = ContextCompat.getColor(holder.itemView.getContext(), R.color.colorContainerBackground);
+
         holder.cardView.setCardBackgroundColor(
-                selectedPosition == position ?
-                        holder.itemView.getContext().getResources().getColor(R.color.colorPrimary) :
-                        holder.itemView.getContext().getResources().getColor(R.color.colorContainerBackground));
+                selectedPosition == position ? colorPrimary : colorContainerBackground
+        );
 
         holder.itemView.setOnClickListener(v -> {
             int previousSelected = selectedPosition;
-            selectedPosition = holder.getAdapterPosition();
+            selectedPosition = holder.getBindingAdapterPosition();
             notifyItemChanged(previousSelected);
             notifyItemChanged(selectedPosition);
             listener.onTypeSelected(type);

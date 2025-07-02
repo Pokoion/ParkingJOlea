@@ -1,7 +1,6 @@
 package com.lksnext.parkingplantilla.view.fragment;
 
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,14 +23,17 @@ public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
     private ReservationsViewModel viewModel;
 
-    private Handler refreshHandler = new Handler();
-    private final int REFRESH_INTERVAL_MS = 10000; // 10 segundos
+    private static final int REFRESH_INTERVAL_MS = 10000; // 10 segundos
+    private boolean isFirstLoad = true;
     private final Runnable refreshRunnable = new Runnable() {
         @Override
         public void run() {
             if (isResumed()) {
+                boolean prevFirstLoad = isFirstLoad;
+                isFirstLoad = false;
                 viewModel.loadCurrentAndNextReservations();
-                refreshHandler.postDelayed(this, REFRESH_INTERVAL_MS);
+                isFirstLoad = prevFirstLoad;
+                requireView().postDelayed(this, REFRESH_INTERVAL_MS);
             }
         }
     };
@@ -62,8 +64,11 @@ public class HomeFragment extends Fragment {
         // Observar estado de carga
         viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
             if (isLoading != null && isLoading) {
-                binding.progressBar.setVisibility(View.VISIBLE);
-                binding.mainContainer.setVisibility(View.INVISIBLE);
+                // Solo mostrar el progressBar en la primera carga
+                if (isFirstLoad) {
+                    binding.progressBar.setVisibility(View.VISIBLE);
+                    binding.mainContainer.setVisibility(View.INVISIBLE);
+                }
             } else {
                 binding.progressBar.setVisibility(View.GONE);
                 binding.mainContainer.setVisibility(View.VISIBLE);
@@ -86,19 +91,21 @@ public class HomeFragment extends Fragment {
 
         // Cargar datos
         viewModel.loadCurrentAndNextReservations();
+        // Bandera para saber si es la primera carga
+        isFirstLoad = false;
 
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        refreshHandler.postDelayed(refreshRunnable, REFRESH_INTERVAL_MS);
+        requireView().postDelayed(refreshRunnable, REFRESH_INTERVAL_MS);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        refreshHandler.removeCallbacks(refreshRunnable);
+        requireView().removeCallbacks(refreshRunnable);
     }
 
     private void updateCurrentReservation(Reserva reserva) {

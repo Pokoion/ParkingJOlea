@@ -6,6 +6,7 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.lksnext.parkingplantilla.R;
 import com.lksnext.parkingplantilla.databinding.ActivityRegisterBinding;
@@ -41,7 +42,7 @@ public class RegisterActivity extends AppCompatActivity {
         // Observe registration process state
         registerViewModel.getIsRegistering().observe(this, isRegistering -> {
             binding.btnRegister.setEnabled(!isRegistering);
-            if (isRegistering) {
+            if (Boolean.TRUE.equals(isRegistering)) {
                 binding.progressBar.setVisibility(android.view.View.VISIBLE);
             } else {
                 binding.progressBar.setVisibility(android.view.View.GONE);
@@ -50,7 +51,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         // Observe registration success
         registerViewModel.getRegistrationSuccess().observe(this, success -> {
-            if (success) {
+            if (Boolean.TRUE.equals(success)) {
                 Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
                 startActivity(intent);
                 finish();
@@ -85,13 +86,13 @@ public class RegisterActivity extends AppCompatActivity {
                 break;
 
             case NETWORK_ERROR:
-                SnackbarUtils.showVisibleSnackbar(this, binding.getRoot(),
-                        "Error de red. Por favor, comprueba tu conexión.", Snackbar.LENGTH_LONG);
+                SnackbarUtils.showVisibleSnackbar(binding.getRoot(),
+                        "Error de red. Por favor, comprueba tu conexión.", BaseTransientBottomBar.LENGTH_LONG);
                 break;
 
             case APPLICATION_ERROR:
-                SnackbarUtils.showVisibleSnackbar(this, binding.getRoot(),
-                        "Error en la aplicación. Por favor, inténtalo más tarde.", Snackbar.LENGTH_LONG);
+                SnackbarUtils.showVisibleSnackbar(binding.getRoot(),
+                        "Error en la aplicación. Por favor, inténtalo más tarde.", BaseTransientBottomBar.LENGTH_LONG);
                 break;
         }
     }

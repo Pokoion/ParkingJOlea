@@ -1,7 +1,6 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
 import android.content.SharedPreferences;
-import android.os.Build;
 
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.LiveData;
@@ -27,7 +26,7 @@ public class UserViewModel extends ViewModel {
     public static final String PREF_THEME = "selected_theme";
 
     public UserViewModel() {
-        this.repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
     }
     public UserViewModel(DataRepository repository) {
         this.repository = repository;

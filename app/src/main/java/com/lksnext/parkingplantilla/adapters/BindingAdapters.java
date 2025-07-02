@@ -5,6 +5,9 @@ import androidx.databinding.BindingAdapter;
 
 public class BindingAdapters {
 
+    private BindingAdapters() {
+
+    }
     @BindingAdapter("imageResource")
     public static void setImageResource(ImageView imageView, String resourceName) {
         if (resourceName == null) return;

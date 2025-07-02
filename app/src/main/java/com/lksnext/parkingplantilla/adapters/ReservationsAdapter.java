@@ -74,10 +74,9 @@ public class ReservationsAdapter extends RecyclerView.Adapter<ReservationsAdapte
 
             builder.setTitle("Confirmar eliminación")
                     .setMessage("¿Estás seguro de que deseas eliminar esta reserva?")
-                    .setPositiveButton("Eliminar", (dialog, which) -> {
-                        // Llamar al ViewModel para eliminar la reserva
-                        viewModel.deleteReservation(reserva.getId());
-                    })
+                    .setPositiveButton("Eliminar", (dialog, which) ->
+                            viewModel.deleteReservation(reserva.getId())
+                    )
                     .setNegativeButton("Cancelar", (dialog, which) -> dialog.dismiss());
 
             // Crear y mostrar el diálogo, guardando la referencia como AlertDialog

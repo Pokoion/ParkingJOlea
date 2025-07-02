@@ -21,7 +21,7 @@ public class MainViewModel extends ViewModel {
     private final MutableLiveData<Boolean> userExists = new MutableLiveData<>();
 
     public MainViewModel() {
-        repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
         loadCurrentUser();
     }
 

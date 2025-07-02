@@ -1,9 +1,6 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
-import android.content.Context;
-
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.lksnext.parkingplantilla.ParkingApplication;
@@ -28,7 +25,6 @@ public class RegisterViewModelInstrumentedTest {
 
     private RegisterViewModel viewModel;
     private DataRepository repository;
-    private Context context;
 
     private static final String TEST_EMAIL = "register_test_user@example.com";
     private static final String TEST_PASSWORD = "Test1234!";
@@ -37,8 +33,7 @@ public class RegisterViewModelInstrumentedTest {
 
     @Before
     public void setUp() throws Exception {
-        context = ApplicationProvider.getApplicationContext();
-        repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
         viewModel = new RegisterViewModel(repository);
         // Asegurarse de que el usuario no exista antes de cada test
         CountDownLatch latch = new CountDownLatch(1);
@@ -71,7 +66,7 @@ public class RegisterViewModelInstrumentedTest {
         RegisterViewModel.RegisterError error = LiveDataTestUtil.getValue(viewModel.getRegisterError());
         Boolean success = viewModel.getRegistrationSuccess().getValue();
         assertEquals(RegisterViewModel.RegisterError.INVALID_EMAIL, error);
-        assertFalse(Boolean.TRUE.equals(success));
+        assertNotEquals(Boolean.TRUE, success);
     }
 
     @Test
@@ -80,7 +75,7 @@ public class RegisterViewModelInstrumentedTest {
         RegisterViewModel.RegisterError error = LiveDataTestUtil.getValue(viewModel.getRegisterError());
         Boolean success = viewModel.getRegistrationSuccess().getValue();
         assertEquals(RegisterViewModel.RegisterError.USERNAME_EMPTY, error);
-        assertFalse(Boolean.TRUE.equals(success));
+        assertNotEquals(Boolean.TRUE, success);
     }
 
     @Test
@@ -89,7 +84,7 @@ public class RegisterViewModelInstrumentedTest {
         RegisterViewModel.RegisterError error = LiveDataTestUtil.getValue(viewModel.getRegisterError());
         Boolean success = viewModel.getRegistrationSuccess().getValue();
         assertEquals(RegisterViewModel.RegisterError.PASSWORD_TOO_SHORT, error);
-        assertFalse(Boolean.TRUE.equals(success));
+        assertNotEquals(Boolean.TRUE, success);
     }
 
     @Test
@@ -97,7 +92,7 @@ public class RegisterViewModelInstrumentedTest {
         // Primer registro y espera a que termine
         viewModel.register(TEST_EMAIL, TEST_NAME, TEST_PASSWORD);
         Boolean success = LiveDataTestUtil.getValue(viewModel.getRegistrationSuccess());
-        assertTrue(Boolean.TRUE.equals(success));
+        assertEquals(Boolean.TRUE, success);
         // Segundo registro, ahora sí debería dar error
         viewModel.register(TEST_EMAIL, TEST_NAME, TEST_PASSWORD);
         RegisterViewModel.RegisterError error = LiveDataTestUtil.getValue(viewModel.getRegisterError());
@@ -111,7 +106,7 @@ public class RegisterViewModelInstrumentedTest {
         RegisterViewModel.RegisterError error = LiveDataTestUtil.getValue(vm.getRegisterError());
         Boolean success = vm.getRegistrationSuccess().getValue();
         assertEquals(RegisterViewModel.RegisterError.APPLICATION_ERROR, error);
-        assertFalse(Boolean.TRUE.equals(success));
+        assertNotEquals(Boolean.TRUE, success);
     }
 
     @Test
@@ -125,7 +120,7 @@ public class RegisterViewModelInstrumentedTest {
         // Password corta
         assertFalse(viewModel.validateRegisterFields(TEST_EMAIL, TEST_NAME, "123"));
         assertEquals(RegisterViewModel.RegisterError.PASSWORD_TOO_SHORT, viewModel.getRegisterError().getValue());
-        // Todo correcto
+
         assertTrue(viewModel.validateRegisterFields(TEST_EMAIL, TEST_NAME, TEST_PASSWORD));
         assertEquals(RegisterViewModel.RegisterError.PASSWORD_TOO_SHORT, viewModel.getRegisterError().getValue()); // No cambia a NONE hasta llamar a register
     }

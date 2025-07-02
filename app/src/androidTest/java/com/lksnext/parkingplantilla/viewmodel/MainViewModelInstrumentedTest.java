@@ -33,11 +33,16 @@ public class MainViewModelInstrumentedTest {
 
     @Before
     public void setUp() throws Exception {
-        repository = ParkingApplication.getRepository();
-        // Registrar usuario de test
+        repository = ParkingApplication.getInstance().getRepository();
+
         CountDownLatch latch = new CountDownLatch(1);
         repository.register(TEST_NAME, TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+
+        CountDownLatch loginLatch = new CountDownLatch(1);
+        repository.login(TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(loginLatch));
+        loginLatch.await(TIMEOUT, TimeUnit.SECONDS);
+
         viewModel = new MainViewModel(repository);
     }
 
@@ -60,7 +65,7 @@ public class MainViewModelInstrumentedTest {
     public void checkCurrentUserExists_true() throws Exception {
         viewModel.checkCurrentUserExists();
         Boolean exists = LiveDataTestUtil.getValue(viewModel.getUserExists());
-        assertTrue(Boolean.TRUE.equals(exists));
+        assertEquals(Boolean.TRUE, exists);
     }
 
     @Test
@@ -68,6 +73,6 @@ public class MainViewModelInstrumentedTest {
         repository.logout();
         viewModel.checkCurrentUserExists();
         Boolean exists = LiveDataTestUtil.getValue(viewModel.getUserExists());
-        assertFalse(Boolean.TRUE.equals(exists));
+        assertNotEquals(Boolean.TRUE, exists);
     }
 }

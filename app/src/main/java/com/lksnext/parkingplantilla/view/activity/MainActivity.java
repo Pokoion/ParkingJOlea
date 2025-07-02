@@ -18,11 +18,9 @@ import com.lksnext.parkingplantilla.viewmodel.MainViewModel;
 
 public class MainActivity extends AppCompatActivity {
 
-    private BottomNavigationView bottomNavigationView;
     private ActivityMainBinding binding;
     private NavController navController;
     private AppBarConfiguration appBarConfiguration;
-    private MainViewModel mainViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
                 (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.flFragment);
         navController = navHostFragment.getNavController();
 
-        bottomNavigationView = binding.bottomNavigationView;
+        BottomNavigationView bottomNavigationView = binding.bottomNavigationView;
         NavigationUI.setupWithNavController(bottomNavigationView, navController);
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
@@ -64,8 +62,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupViewModel() {
-        // Inicializamos el ViewModel
-        mainViewModel = new ViewModelProvider(this).get(MainViewModel.class);
+        MainViewModel mainViewModel = new ViewModelProvider(this).get(MainViewModel.class);
 
         // Comprobamos si el usuario existe en la base de datos
         mainViewModel.checkCurrentUserExists();

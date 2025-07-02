@@ -9,11 +9,12 @@ import java.util.Date;
 import java.util.Locale;
 
 public class DateUtils {
-    // Constantes para formatos de fecha
     private static final String API_DATE_FORMAT = "yyyy-MM-dd";
     private static final String UI_DATE_FORMAT = "dd-MM-yyyy";
     private static final String TIME_FORMAT = "HH:mm";
-    private static final String DATETIME_FORMAT = "yyyy-MM-dd HH:mm";
+
+    private DateUtils() {
+    }
 
     /**
      * Obtiene un objeto Date con la fecha y hora de inicio de la reserva (formato API + ms desde medianoche)
@@ -35,7 +36,6 @@ public class DateUtils {
             cal.set(Calendar.MILLISECOND, 0);
             return cal.getTime();
         } catch (Exception e) {
-            e.printStackTrace();
             return new Date(); // Fallback a fecha actual
         }
     }
@@ -58,7 +58,6 @@ public class DateUtils {
             cal.set(Calendar.MILLISECOND, 0);
             return cal.getTime();
         } catch (Exception e) {
-            e.printStackTrace();
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.HOUR, 2);
             return calendar.getTime();
@@ -103,7 +102,6 @@ public class DateUtils {
             Date date = inputFormat.parse(reserva.getFecha());
             return outputFormat.format(date);
         } catch (ParseException e) {
-            e.printStackTrace();
             return reserva.getFecha();
         }
     }
@@ -193,7 +191,6 @@ public class DateUtils {
             Date date = inputFormat.parse(apiDate);
             return outputFormat.format(date);
         } catch (ParseException e) {
-            e.printStackTrace();
             return apiDate;
         }
     }
@@ -208,7 +205,6 @@ public class DateUtils {
             Date date = inputFormat.parse(uiDate);
             return outputFormat.format(date);
         } catch (ParseException e) {
-            e.printStackTrace();
             return uiDate;
         }
     }
@@ -302,7 +298,7 @@ public class DateUtils {
             Date date = apiDateFormat.parse(apiDate);
             calendar.setTime(date);
         } catch (ParseException e) {
-            e.printStackTrace();
+            calendar = Calendar.getInstance();
         }
         return calendar;
     }

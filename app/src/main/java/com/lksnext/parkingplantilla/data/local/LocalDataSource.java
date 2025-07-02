@@ -12,9 +12,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.Date;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 public class LocalDataSource implements DataSource {
@@ -25,6 +25,7 @@ public class LocalDataSource implements DataSource {
     private final List<Hora> horas;
     private final Map<String, List<Reserva>> reservasPorUsuario;
     private final List<Reserva> todasReservas;
+    private final Random random = new Random();
 
     public LocalDataSource() {
         // Initialize fake users
@@ -101,7 +102,7 @@ public class LocalDataSource implements DataSource {
 
         Hora horaReservaActual = new Hora(currentTimeMs, currentTimeMs + 3600000);
 
-        Hora horaReservaMañana = new Hora(8 * 3600000, 9 * 3600000);
+        Hora horaReservaManana = new Hora(8L * 3600000, 9L * 3600000);
 
         // Create sample reservations for the admin user
         List<Reserva> adminReservas = new ArrayList<>();
@@ -112,7 +113,7 @@ public class LocalDataSource implements DataSource {
         todasReservas.add(r1);
 
         Reserva r2 = new Reserva(tomorrow, ADMINEMAIL,
-                UUID.randomUUID().toString(), plazas.get(1), horaReservaMañana);
+                UUID.randomUUID().toString(), plazas.get(1), horaReservaManana);
         adminReservas.add(r2);
         todasReservas.add(r2);
 
@@ -171,7 +172,7 @@ public class LocalDataSource implements DataSource {
         todasReservas.add(r8);
 
         Reserva r9 = new Reserva(tomorrow, USEREMAIL,
-                UUID.randomUUID().toString(), plazas.get(6), horaReservaMañana);
+                UUID.randomUUID().toString(), plazas.get(6), horaReservaManana);
         userReservas.add(r9);
         todasReservas.add(r9);
 
@@ -220,9 +221,10 @@ public class LocalDataSource implements DataSource {
         List<Reserva> historicReservations = new ArrayList<>();
         if (userReservations != null && !userReservations.isEmpty()) {
             for (Reserva reserva : userReservations) {
-                if (reserva.getEstado() == Reserva.Estado.FINALIZADA && DateUtils.isWithinLast30Days(reserva, false)) {
-                    historicReservations.add(reserva);
-                } else if (reserva.getEstado() == Reserva.Estado.CANCELADA && DateUtils.isWithinLast30Days(reserva, true)) {
+                boolean isHistoric =
+                        (reserva.getEstado() == Reserva.Estado.FINALIZADA && DateUtils.isWithinLast30Days(reserva, false)) ||
+                        (reserva.getEstado() == Reserva.Estado.CANCELADA && DateUtils.isWithinLast30Days(reserva, true));
+                if (isHistoric) {
                     historicReservations.add(reserva);
                 }
             }
@@ -264,12 +266,9 @@ public class LocalDataSource implements DataSource {
 
         for (Reserva reserva : userReservations) {
             Date reservaDateTime = DateUtils.getReservaDateTime(reserva);
-
-            if (reservaDateTime.after(now)) {
-                if (nextReservation == null || reservaDateTime.before(nextDate)) {
-                    nextReservation = reserva;
-                    nextDate = reservaDateTime;
-                }
+            if (reservaDateTime.after(now) && (nextReservation == null || reservaDateTime.before(nextDate))) {
+                nextReservation = reserva;
+                nextDate = reservaDateTime;
             }
         }
 
@@ -354,21 +353,9 @@ public class LocalDataSource implements DataSource {
 
     @Override
     public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
-        // Solo permitir crear si no hay solapamiento con reservas ACTIVAS
-        if (reserva.getPlaza() != null && reserva.getPlaza().getId() != null) {
-            for (Reserva r : todasReservas) {
-                if (r.getPlaza() != null && r.getPlaza().getId().equals(reserva.getPlaza().getId()) && r.getFecha().equals(reserva.getFecha())
-                    && r.getEstado() == Reserva.Estado.ACTIVA) {
-                    long ini = r.getHora().getHoraInicio();
-                    long fin = r.getHora().getHoraFin();
-                    long nIni = reserva.getHora().getHoraInicio();
-                    long nFin = reserva.getHora().getHoraFin();
-                    if (!(nFin <= ini || nIni >= fin)) {
-                        callback.onFailure(new Exception("Plaza ocupada en ese horario"));
-                        return;
-                    }
-                }
-            }
+        if (reserva.getPlaza() != null && reserva.getPlaza().getId() != null && haySolapamientoReservaActiva(reserva)) {
+            callback.onFailure(new Exception("Plaza ocupada en ese horario"));
+            return;
         }
         if (reserva.getId() == null || reserva.getId().isEmpty()) {
             reserva.setId(UUID.randomUUID().toString());
@@ -376,13 +363,25 @@ public class LocalDataSource implements DataSource {
         reserva.setEstado(Reserva.Estado.ACTIVA);
         todasReservas.add(reserva);
         String userId = reserva.getUsuario();
-        List<Reserva> userReservations = reservasPorUsuario.get(userId);
-        if (userReservations == null) {
-            userReservations = new ArrayList<>();
-            reservasPorUsuario.put(userId, userReservations);
-        }
+        List<Reserva> userReservations = reservasPorUsuario.computeIfAbsent(userId, k -> new ArrayList<>());
         userReservations.add(reserva);
         callback.onSuccess(true);
+    }
+
+    private boolean haySolapamientoReservaActiva(Reserva reserva) {
+        for (Reserva r : todasReservas) {
+            if (r.getPlaza() != null && r.getPlaza().getId().equals(reserva.getPlaza().getId()) && r.getFecha().equals(reserva.getFecha())
+                && r.getEstado() == Reserva.Estado.ACTIVA) {
+                long ini = r.getHora().getHoraInicio();
+                long fin = r.getHora().getHoraFin();
+                long nIni = reserva.getHora().getHoraInicio();
+                long nFin = reserva.getHora().getHoraFin();
+                if (!(nFin <= ini || nIni >= fin)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -472,12 +471,7 @@ public class LocalDataSource implements DataSource {
         checkUserExists(email, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean exists) {
-                if (exists) {
-                    // Simula el envío de email
-                    callback.onSuccess(true);
-                } else {
-                    callback.onSuccess(false);
-                }
+                callback.onSuccess(Boolean.TRUE.equals(exists));
             }
             @Override
             public void onFailure(Exception e) {
@@ -565,10 +559,8 @@ public class LocalDataSource implements DataSource {
         boolean isAvailable = true;
         if (mapa.containsKey(plazaId)) {
             for (Reserva r : mapa.get(plazaId)) {
-                if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
-                    continue;
-                }
-                if (r.getEstado() == Reserva.Estado.ACTIVA) {
+                boolean isExcluded = excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId());
+                if (r.getEstado() == Reserva.Estado.ACTIVA && !isExcluded) {
                     isAvailable = false;
                     break;
                 }
@@ -584,10 +576,8 @@ public class LocalDataSource implements DataSource {
         for (Map.Entry<String, List<Reserva>> entry : mapa.entrySet()) {
             boolean libre = true;
             for (Reserva r : entry.getValue()) {
-                if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
-                    continue;
-                }
-                if (r.getEstado() == Reserva.Estado.ACTIVA) {
+                boolean isExcluded = excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId());
+                if (r.getEstado() == Reserva.Estado.ACTIVA && !isExcluded) {
                     libre = false;
                     break;
                 }
@@ -607,7 +597,7 @@ public class LocalDataSource implements DataSource {
                 if (disponibles.isEmpty()) {
                     callback.onSuccess(null);
                 } else {
-                    int idx = (int) (Math.random() * disponibles.size());
+                    int idx = random.nextInt(disponibles.size());
                     callback.onSuccess(disponibles.get(idx));
                 }
             }
@@ -621,29 +611,35 @@ public class LocalDataSource implements DataSource {
     @Override
     public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
         List<String> disponibles = new ArrayList<>();
-        int maxNumber = 10;
-        if (tipo.equals(Plaza.TIPO_MOTORCYCLE) && row.equals("E")) maxNumber = 8;
-        if (tipo.equals(Plaza.TIPO_DISABLED) && row.equals("F")) maxNumber = 5;
-        if (tipo.equals(Plaza.TIPO_CV_CHARGER) && row.equals("G")) maxNumber = 6;
+        int maxNumber = getMaxNumber(tipo, row);
         for (int i = 1; i <= maxNumber; i++) {
             String plazaId = row + "-" + i;
-            boolean reservada = false;
-            for (Reserva r : todasReservas) {
-                if (r.getPlaza() != null && plazaId.equals(r.getPlaza().getId()) && r.getFecha().equals(fecha)
-                    && r.getEstado() == Reserva.Estado.ACTIVA) {
-                    if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
-                        continue;
-                    }
-                    long ini = r.getHora().getHoraInicio();
-                    long fin = r.getHora().getHoraFin();
-                    if (!(horaFin <= ini || horaInicio >= fin)) {
-                        reservada = true;
-                        break;
-                    }
-                }
+            if (!isPlazaReservada(plazaId, fecha, horaInicio, horaFin, excludeReservationId)) {
+                disponibles.add(String.valueOf(i));
             }
-            if (!reservada) disponibles.add(String.valueOf(i));
         }
         callback.onSuccess(disponibles);
+    }
+
+    private int getMaxNumber(String tipo, String row) {
+        if (tipo.equals(Plaza.TIPO_MOTORCYCLE) && row.equals("E")) return 8;
+        if (tipo.equals(Plaza.TIPO_DISABLED) && row.equals("F")) return 5;
+        if (tipo.equals(Plaza.TIPO_CV_CHARGER) && row.equals("G")) return 6;
+        return 10;
+    }
+
+    private boolean isPlazaReservada(String plazaId, String fecha, long horaInicio, long horaFin, String excludeReservationId) {
+        for (Reserva r : todasReservas) {
+            boolean isExcluded = excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId());
+            if (r.getPlaza() != null && plazaId.equals(r.getPlaza().getId()) && r.getFecha().equals(fecha)
+                && r.getEstado() == Reserva.Estado.ACTIVA && !isExcluded) {
+                long ini = r.getHora().getHoraInicio();
+                long fin = r.getHora().getHoraFin();
+                if (!(horaFin <= ini || horaInicio >= fin)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

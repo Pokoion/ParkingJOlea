@@ -1,9 +1,6 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
-import android.content.Context;
-
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.lksnext.parkingplantilla.ParkingApplication;
@@ -28,7 +25,6 @@ public class ChangePassViewModelInstrumentedTest {
 
     private ChangePassViewModel viewModel;
     private DataRepository repository;
-    private Context context;
 
     private static final String TEST_EMAIL = "changepass_test_user@example.com";
     private static final String TEST_PASSWORD = "Test1234!";
@@ -37,8 +33,7 @@ public class ChangePassViewModelInstrumentedTest {
 
     @Before
     public void setUp() throws Exception {
-        context = ApplicationProvider.getApplicationContext();
-        repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
         viewModel = new ChangePassViewModel(repository);
         // Registrar usuario de test
         CountDownLatch latch = new CountDownLatch(1);
@@ -60,7 +55,7 @@ public class ChangePassViewModelInstrumentedTest {
         String status = LiveDataTestUtil.getValue(viewModel.getStatusMessage());
         Boolean loading = LiveDataTestUtil.getValue(viewModel.getIsLoading());
         assertEquals("Correo de recuperación enviado. Revisa tu bandeja de entrada.", status);
-        assertFalse(Boolean.TRUE.equals(loading));
+        assertNotEquals(Boolean.TRUE, loading);
     }
 
     @Test
@@ -70,7 +65,7 @@ public class ChangePassViewModelInstrumentedTest {
         String status = LiveDataTestUtil.getValue(viewModel.getStatusMessage());
         Boolean loading = LiveDataTestUtil.getValue(viewModel.getIsLoading());
         assertEquals("El email no está registrado.", status);
-        assertFalse(Boolean.TRUE.equals(loading));
+        assertNotEquals(Boolean.TRUE, loading);
     }
 
     @Test

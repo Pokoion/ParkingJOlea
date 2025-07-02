@@ -1,9 +1,6 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
-import android.content.Context;
-import android.util.Log;
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.lksnext.parkingplantilla.ParkingApplication;
 import com.lksnext.parkingplantilla.data.DataRepository;
@@ -29,28 +26,30 @@ public class ReservationsViewModelInstrumentedTest {
 
     private ReservationsViewModel viewModel;
     private DataRepository repository;
-    private Context context;
+
     private static final String TEST_EMAIL = "test_load_user@example.com";
     private static final String TEST_PASSWORD = "Test1234!";
     private static final String TEST_NAME = "Test Load User";
     private static final String PLAZA_ID = "TEST-1";
     private static final String PLAZA_TIPO = Plaza.TIPO_STANDARD;
-    private static final String FECHA = "2025-06-29";
-    private static final String FECHA_FUTURA = "2025-07-01";
-    private static final String FECHA_ANTERIOR = DateUtils.formatDateForApi(DateUtils.parseDateForApiToCalendar(DateUtils.getCurrentDateForApi()));
+    private static final String FECHA_HOY = DateUtils.formatDateForApi(Calendar.getInstance());
+    private static final String FECHA_FUTURA = calcularFechaFutura();
     private Plaza testPlaza;
 
+    private static String calcularFechaFutura() {
+        Calendar manana = Calendar.getInstance();
+        manana.add(Calendar.DAY_OF_MONTH, 1);
+        return DateUtils.formatDateForApi(manana);
+    }
+
     private String crearReservaDePrueba(String email, Plaza plaza, String fecha, long inicio, long fin, Reserva.Estado estado, int reservasEsperadas) throws Exception {
-        Log.d("TEST_RESERVA", "Intentando crear reserva: usuario=" + email + ", plaza=" + plaza.getId() + ", fecha=" + fecha + ", inicio=" + inicio + ", fin=" + fin + ", estado=" + estado);
         Hora hora = new Hora(inicio, fin);
         Reserva reserva = new Reserva(fecha, email, plaza.getId(), plaza, hora);
         reserva.setEstado(estado);
         boolean result = false;
         try {
             result = LiveDataTestUtil.getValue(viewModel.createReservation(reserva));
-            Log.d("TEST_RESERVA", "Resultado creación reserva: " + result);
         } catch (Exception e) {
-            Log.e("TEST_RESERVA", "Excepción al crear reserva: " + e.getMessage(), e);
             throw e;
         }
         assertTrue(result);
@@ -61,7 +60,6 @@ public class ReservationsViewModelInstrumentedTest {
                 viewModel.getHistoricReservations(),
                 (java.util.function.Predicate<List<Reserva>>) (list -> list != null && list.size() >= reservasEsperadas)
             );
-            Log.d("TEST_RESERVA", "Reservas históricas encontradas tras crear: " + (reservas != null ? reservas.size() : "null"));
             assertNotNull(reservas);
             for (Reserva r : reservas) {
                 if (r.getPlaza().getId().equals(plaza.getId()) && r.getFecha().equals(fecha)) {
@@ -74,7 +72,6 @@ public class ReservationsViewModelInstrumentedTest {
                 viewModel.getReservations(),
                 (java.util.function.Predicate<List<Reserva>>) (list -> list != null && list.size() >= reservasEsperadas)
             );
-            Log.d("TEST_RESERVA", "Reservas activas encontradas tras crear: " + (reservas != null ? reservas.size() : "null"));
             assertNotNull(reservas);
             for (Reserva r : reservas) {
                 if (r.getPlaza().getId().equals(plaza.getId()) && r.getFecha().equals(fecha)) {
@@ -88,8 +85,7 @@ public class ReservationsViewModelInstrumentedTest {
 
     @Before
     public void setUp() throws Exception {
-        context = ApplicationProvider.getApplicationContext();
-        repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
         viewModel = new ReservationsViewModel(repository);
         // Registrar usuario
         CountDownLatch latch = new CountDownLatch(1);
@@ -192,13 +188,12 @@ public class ReservationsViewModelInstrumentedTest {
     @Test
     public void loadUserReservations_cargaTodasDelUsuarioActual() throws Exception {
         // Crear reserva actual (hoy)
-        Calendar now = Calendar.getInstance();
-        String fechaActual = DateUtils.formatDateForApi(now);
+        String fechaActual = FECHA_HOY;
         long inicio = DateUtils.getCurrentTimeMs() - 60 * 1000;
         long fin = inicio + 60 * 60 * 1000;
         String reservaActualId = crearReservaDePrueba(TEST_EMAIL, testPlaza, fechaActual, inicio, fin, Reserva.Estado.ACTIVA, 1);
-        // Crear reserva futura (FECHA_FUTURA)
-        String fechaFutura = FECHA_FUTURA;
+        // Crear reserva futura (si coincide con hoy, usar FECHA_FUTURA)
+        String fechaFutura = FECHA_FUTURA.equals(fechaActual) ? calcularFechaFutura() : FECHA_FUTURA;
         long inicioFuturo = DateUtils.timeToMs(10, 0);
         long finFuturo = inicioFuturo + 60 * 60 * 1000;
         String reservaFuturaId = crearReservaDePrueba(TEST_EMAIL, testPlaza, fechaFutura, inicioFuturo, finFuturo, Reserva.Estado.ACTIVA, 2);

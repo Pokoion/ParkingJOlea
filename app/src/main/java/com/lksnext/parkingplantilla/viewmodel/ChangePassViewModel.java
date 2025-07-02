@@ -14,7 +14,7 @@ public class ChangePassViewModel extends ViewModel {
     private final DataRepository repository;
 
     public ChangePassViewModel() {
-        repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
     }
     public ChangePassViewModel(DataRepository repository) {
         this.repository = repository;
@@ -37,7 +37,7 @@ public class ChangePassViewModel extends ViewModel {
         repository.checkUserExists(email, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean exists) {
-                if (exists) {
+                if (Boolean.TRUE.equals(exists)) {
                     repository.sendPasswordResetEmail(email, new DataCallback<Boolean>() {
                         @Override
                         public void onSuccess(Boolean sent) {

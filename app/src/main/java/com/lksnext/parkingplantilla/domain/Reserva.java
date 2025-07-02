@@ -9,10 +9,10 @@ public class Reserva {
         CANCELADA
     }
 
-    String fecha, usuario, id;
-
+    String fecha;
+    String usuario;
+    String id;
     Plaza plaza;
-
     Hora hora;
     Estado estado;
 

@@ -1,6 +1,5 @@
 package com.lksnext.parkingplantilla.utils;
 
-import android.app.Activity;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,18 +11,20 @@ import com.google.android.material.snackbar.Snackbar;
 
 public class SnackbarUtils {
 
-    public static void showVisibleSnackbar(Activity activity, View rootView, String message, int duration) {
+    private SnackbarUtils() {
+        // Prevent instantiation
+    }
+
+    public static void showVisibleSnackbar(View rootView, String message, int duration) {
         Snackbar snackbar = Snackbar.make(rootView, message, duration);
 
         View snackbarView = snackbar.getView();
         ViewGroup.LayoutParams params = snackbarView.getLayoutParams();
 
-        if (params instanceof CoordinatorLayout.LayoutParams) {
-            CoordinatorLayout.LayoutParams coordinatorParams = (CoordinatorLayout.LayoutParams) params;
+        if (params instanceof CoordinatorLayout.LayoutParams coordinatorParams) {
             coordinatorParams.gravity = Gravity.TOP;
             coordinatorParams.topMargin = 150;
-        } else if (params instanceof FrameLayout.LayoutParams) {
-            FrameLayout.LayoutParams frameParams = (FrameLayout.LayoutParams) params;
+        } else if (params instanceof FrameLayout.LayoutParams frameParams) {
             frameParams.gravity = Gravity.TOP;
             frameParams.topMargin = 150;
         }

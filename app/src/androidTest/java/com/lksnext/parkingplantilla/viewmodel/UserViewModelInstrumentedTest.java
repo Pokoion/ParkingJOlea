@@ -30,13 +30,11 @@ public class UserViewModelInstrumentedTest {
 
     private static final String TEST_EMAIL = "userviewmodel_test_user@example.com";
     private static final String TEST_PASSWORD = "Test1234!";
-    private static final String TEST_NAME = "UserVM Test";
-    private static final int TIMEOUT = 10;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         context = ApplicationProvider.getApplicationContext();
-        repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
         viewModel = new UserViewModel(repository);
         // Limpia preferencias de tema antes de cada test
         SharedPreferences prefs = context.getSharedPreferences(UserViewModel.PREF_NAME, 0);
@@ -44,7 +42,7 @@ public class UserViewModelInstrumentedTest {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         // Limpia preferencias de tema después de cada test
         SharedPreferences prefs = context.getSharedPreferences(UserViewModel.PREF_NAME, 0);
         prefs.edit().clear().commit();
@@ -76,7 +74,7 @@ public class UserViewModelInstrumentedTest {
         repository.login(TEST_EMAIL, TEST_PASSWORD, null);
         viewModel.logout();
         Boolean logoutSuccess = LiveDataTestUtil.getValue(viewModel.isLogoutSuccessful());
-        assertTrue(Boolean.TRUE.equals(logoutSuccess));
+        assertEquals(Boolean.TRUE, logoutSuccess);
     }
 
     @Test

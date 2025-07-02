@@ -5,7 +5,6 @@ import android.content.Context;
 import com.google.firebase.auth.FirebaseAuth;
 import com.lksnext.parkingplantilla.data.firebase.FirebaseDataSource;
 import com.lksnext.parkingplantilla.data.repository.DataSource;
-import com.lksnext.parkingplantilla.domain.Callback;
 import com.lksnext.parkingplantilla.domain.DataCallback;
 import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.domain.Reserva;
@@ -25,7 +24,7 @@ public class DataRepository {
 
     public static DataRepository getInstance(DataSource dataSource, Context context) {
         if (instance == null) {
-            instance = new DataRepository(dataSource, context);
+            instance = new DataRepository(dataSource, context.getApplicationContext());
         }
         return instance;
     }

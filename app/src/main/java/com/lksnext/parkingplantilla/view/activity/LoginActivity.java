@@ -6,6 +6,7 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.material.snackbar.BaseTransientBottomBar;
 import com.google.android.material.snackbar.Snackbar;
 import com.lksnext.parkingplantilla.databinding.ActivityLoginBinding;
 import com.lksnext.parkingplantilla.viewmodel.LoginViewModel;
@@ -121,13 +122,18 @@ public class LoginActivity extends AppCompatActivity {
             case NETWORK_ERROR:
                 Snackbar.make(binding.getRoot(),
                         "Error de red. Por favor, comprueba tu conexión.",
-                        Snackbar.LENGTH_LONG).show();
+                        BaseTransientBottomBar.LENGTH_LONG).show();
                 break;
 
             case APPLICATION_ERROR:
                 Snackbar.make(binding.getRoot(),
                         "Error en la aplicación. Por favor, inténtalo más tarde.",
-                        Snackbar.LENGTH_LONG).show();
+                        BaseTransientBottomBar.LENGTH_LONG).show();
+                break;
+            default:
+                Snackbar.make(binding.getRoot(),
+                        "Error desconocido. Por favor, inténtalo más tarde.",
+                        BaseTransientBottomBar.LENGTH_LONG).show();
                 break;
         }
     }

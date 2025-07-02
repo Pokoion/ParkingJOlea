@@ -1,9 +1,6 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
-import android.content.Context;
-
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.lksnext.parkingplantilla.ParkingApplication;
@@ -28,7 +25,6 @@ public class LoginViewModelInstrumentedTest {
 
     private LoginViewModel viewModel;
     private DataRepository repository;
-    private Context context;
 
     private static final String TEST_EMAIL = "login_test_user@example.com";
     private static final String TEST_PASSWORD = "Test1234!";
@@ -37,8 +33,7 @@ public class LoginViewModelInstrumentedTest {
 
     @Before
     public void setUp() throws Exception {
-        context = ApplicationProvider.getApplicationContext();
-        repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
         viewModel = new LoginViewModel(repository);
         CountDownLatch latch = new CountDownLatch(1);
         repository.register(TEST_NAME, TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
@@ -60,7 +55,7 @@ public class LoginViewModelInstrumentedTest {
         Boolean isLogged = LiveDataTestUtil.getValue(viewModel.isLogged());
         String userEmail = LiveDataTestUtil.getValue(viewModel.getCurrentUserEmail());
         LoginViewModel.LoginError error = LiveDataTestUtil.getValue(viewModel.getLoginError());
-        assertTrue(Boolean.TRUE.equals(isLogged));
+        assertEquals(Boolean.TRUE, isLogged);
         assertEquals(TEST_EMAIL, userEmail);
         assertNull(error);
     }
@@ -83,7 +78,7 @@ public class LoginViewModelInstrumentedTest {
         LoginViewModel.LoginError error = LiveDataTestUtil.getValue(viewModel.getLoginError());
         Boolean isLogged = viewModel.isLogged().getValue();
         assertEquals(LoginViewModel.LoginError.EMPTY_FIELDS, error);
-        assertFalse(Boolean.TRUE.equals(isLogged));
+        assertNotEquals(Boolean.TRUE, isLogged);
     }
 
     @Test
@@ -112,7 +107,7 @@ public class LoginViewModelInstrumentedTest {
     public void login_twice_shouldFailSecond() throws Exception {
         viewModel.loginUser(TEST_EMAIL, TEST_PASSWORD);
         Boolean isLogged = LiveDataTestUtil.getValue(viewModel.isLogged());
-        assertTrue(Boolean.TRUE.equals(isLogged));
+        assertEquals(Boolean.TRUE, isLogged);
         viewModel.loginUser(TEST_EMAIL, TEST_PASSWORD);
         LoginViewModel.LoginError error = LiveDataTestUtil.getValue(viewModel.getLoginError());
         assertEquals(LoginViewModel.LoginError.ALREADY_LOGGED, error);
@@ -122,7 +117,7 @@ public class LoginViewModelInstrumentedTest {
     public void logout_withoutLogin_shouldNotCrash() throws Exception {
         viewModel.logout();
         Boolean isLogged = LiveDataTestUtil.getValue(viewModel.isLogged());
-        assertFalse(Boolean.TRUE.equals(isLogged));
+        assertNotEquals(Boolean.TRUE, isLogged);
         String userEmail = LiveDataTestUtil.getValue(viewModel.getCurrentUserEmail());
         assertNull(userEmail);
         LoginViewModel.LoginError error = LiveDataTestUtil.getValue(viewModel.getLoginError());
@@ -145,7 +140,7 @@ public class LoginViewModelInstrumentedTest {
         );
         String userEmail = LiveDataTestUtil.getValue(viewModel.getCurrentUserEmail());
         LoginViewModel.LoginError error = LiveDataTestUtil.getValue(viewModel.getLoginError());
-        assertTrue(Boolean.TRUE.equals(isLogged));
+        assertEquals(Boolean.TRUE, isLogged);
         assertEquals(newEmail, userEmail);
         assertNull(error);
         CountDownLatch latch2 = new CountDownLatch(1);

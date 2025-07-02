@@ -1,13 +1,11 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
-import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.lksnext.parkingplantilla.ParkingApplication;
 import com.lksnext.parkingplantilla.data.DataRepository;
-import com.lksnext.parkingplantilla.domain.Callback;
 import com.lksnext.parkingplantilla.domain.DataCallback;
 import com.lksnext.parkingplantilla.domain.User;
 import com.lksnext.parkingplantilla.utils.Validators;
@@ -29,7 +27,7 @@ public class LoginViewModel extends ViewModel {
     private final MutableLiveData<Boolean> isLoading = new MutableLiveData<>();
 
     public LoginViewModel() {
-        this.repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
         // Check if user is already logged in
         if (repository.isUserLoggedIn()) {
             User currentUser = repository.getCurrentUser();
@@ -86,7 +84,6 @@ public class LoginViewModel extends ViewModel {
             }
             @Override
             public void onFailure(Exception e) {
-                Log.e("LoginViewModel", "Login error: " + (e != null ? e.getMessage() : "null"), e);
                 logged.setValue(false);
                 loginError.setValue(null);
                 currentUserEmail.setValue(null);

@@ -13,6 +13,10 @@ import java.util.function.Predicate;
  */
 public class LiveDataTestUtil {
 
+    private LiveDataTestUtil() {
+
+    }
+
     /**
      * Function that waits for a LiveData value to be changed
      * @param liveData The LiveData variable to observe
@@ -34,7 +38,10 @@ public class LiveDataTestUtil {
         };
         //Observe the LiveData forever. Latch timeout will trigger.
         liveData.observeForever(observer);
-        latch.await(10, TimeUnit.SECONDS);
+        boolean completed = latch.await(10, TimeUnit.SECONDS); // Timeout fijo de 10 segundos
+        if (!completed) {
+            throw new InterruptedException("Timeout esperando el valor de LiveData");
+        }
         //noinspection unchecked
         return (T) data[0];
     }
@@ -56,7 +63,10 @@ public class LiveDataTestUtil {
             }
         };
         liveData.observeForever(observer);
-        latch.await(10, TimeUnit.SECONDS); // Timeout fijo de 10 segundos
+        boolean completed = latch.await(10, TimeUnit.SECONDS); // Timeout fijo de 10 segundos
+        if (!completed) {
+            throw new InterruptedException("Timeout esperando el valor de LiveData");
+        }
         //noinspection unchecked
         return (T) data[0];
     }
@@ -78,7 +88,10 @@ public class LiveDataTestUtil {
             }
         };
         liveData.observeForever(observer);
-        latch.await(10, TimeUnit.SECONDS); // Timeout fijo de 10 segundos
+        boolean completed = latch.await(10, TimeUnit.SECONDS); // Timeout fijo de 10 segundos
+        if (!completed) {
+            throw new InterruptedException("Timeout esperando el valor de LiveData");
+        }
         //noinspection unchecked
         return (T) data[0];
     }

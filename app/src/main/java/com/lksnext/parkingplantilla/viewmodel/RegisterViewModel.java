@@ -1,7 +1,5 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
-import android.util.Log;
-
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -29,7 +27,7 @@ public class RegisterViewModel extends ViewModel {
     private final MutableLiveData<RegisterError> registerError = new MutableLiveData<>();
 
     public RegisterViewModel() {
-        repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
     }
 
     public RegisterViewModel(DataRepository repository) {
@@ -66,17 +64,14 @@ public class RegisterViewModel extends ViewModel {
 
             @Override
             public void onFailure(Exception e) {
-                Log.e("RegisterViewModel", "Registration failed", e);
                 isRegistering.setValue(false);
                 registrationSuccess.setValue(false);
                 RegisterError error = RegisterError.APPLICATION_ERROR;
                 if (e != null && e.getMessage() != null) {
                     String msg = e.getMessage().toLowerCase();
                     if (msg.contains("email_already_exists")) {
-                        Log.d("RegisterViewModel", "Email already exists: " + msg);
                         error = RegisterError.EMAIL_ALREADY_EXISTS;
                     } else if (msg.contains("already") || msg.contains("existe") || msg.contains("in use")) {
-                        Log.d("RegisterViewModel", "Email already exists: " + msg);
                         error = RegisterError.EMAIL_ALREADY_EXISTS;
                     } else if (msg.contains("network")) {
                         error = RegisterError.NETWORK_ERROR;

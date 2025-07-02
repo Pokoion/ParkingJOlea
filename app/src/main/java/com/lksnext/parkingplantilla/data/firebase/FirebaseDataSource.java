@@ -1,36 +1,33 @@
 package com.lksnext.parkingplantilla.data.firebase;
 
-import androidx.annotation.NonNull;
-
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.lksnext.parkingplantilla.data.repository.DataSource;
 import com.lksnext.parkingplantilla.domain.DataCallback;
-import com.lksnext.parkingplantilla.domain.Hora;
 import com.lksnext.parkingplantilla.domain.Plaza;
 import com.lksnext.parkingplantilla.domain.Reserva;
 import com.lksnext.parkingplantilla.domain.User;
 import com.lksnext.parkingplantilla.utils.DateUtils;
 
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class FirebaseDataSource implements DataSource {
+    private static final String COLLECTION_PLAZAS = "plazas";
+    private static final String COLLECTION_USERS = "users";
+    private static final String COLLECTION_RESERVAS = "reservas";
+    private static final String FIELD_USUARIO = "usuario";
+    private static final String FIELD_ESTADO = "estado";
+    private static final String FIELD_FECHA = "fecha";
+
     private final FirebaseAuth mAuth;
     private final FirebaseFirestore db;
+    private final Random random = new Random();
 
     public FirebaseDataSource() {
         mAuth = FirebaseAuth.getInstance();
@@ -44,7 +41,7 @@ public class FirebaseDataSource implements DataSource {
                     if (task.isSuccessful()) {
                         FirebaseUser firebaseUser = mAuth.getCurrentUser();
                         if (firebaseUser != null) {
-                            db.collection("users").document(firebaseUser.getEmail())
+                            db.collection(COLLECTION_USERS).document(firebaseUser.getEmail())
                                     .get().addOnSuccessListener(documentSnapshot -> {
                                         if (documentSnapshot.exists()) {
                                             String name = documentSnapshot.getString("name");
@@ -53,9 +50,7 @@ public class FirebaseDataSource implements DataSource {
                                             callback.onSuccess(new User(firebaseUser.getEmail(), firebaseUser.getEmail(), null));
                                         }
                                     })
-                                    .addOnFailureListener(e -> {
-                                        callback.onFailure(e);
-                                    });
+                                    .addOnFailureListener(callback::onFailure);
                         } else {
                             callback.onFailure(new Exception("Usuario no encontrado"));
                         }
@@ -71,7 +66,7 @@ public class FirebaseDataSource implements DataSource {
         checkUserExists(email, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean exists) {
-                if (exists) {
+                if (Boolean.TRUE.equals(exists)) {
                     callback.onFailure(new Exception("EMAIL_ALREADY_EXISTS"));
                     return;
                 }
@@ -83,13 +78,9 @@ public class FirebaseDataSource implements DataSource {
                                     Map<String, Object> userMap = new HashMap<>();
                                     userMap.put("name", name);
                                     userMap.put("email", email);
-                                    db.collection("users").document(email).set(userMap)
-                                            .addOnSuccessListener(aVoid -> {
-                                                callback.onSuccess(new User(name, email, null));
-                                            })
-                                            .addOnFailureListener(e -> {
-                                                callback.onFailure(e);
-                                            });
+                                    db.collection(COLLECTION_USERS).document(email).set(userMap)
+                                            .addOnSuccessListener(aVoid -> callback.onSuccess(new User(name, email, null)))
+                                            .addOnFailureListener(callback::onFailure);
                                 } else {
                                     callback.onFailure(new Exception("Error al crear usuario"));
                                 }
@@ -107,9 +98,9 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void getReservations(String userId, DataCallback<List<Reserva>> callback) {
-        db.collection("reservas")
-                .whereEqualTo("usuario", userId)
-                .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+        db.collection(COLLECTION_RESERVAS)
+                .whereEqualTo(FIELD_USUARIO, userId)
+                .whereEqualTo(FIELD_ESTADO, Reserva.Estado.ACTIVA.name())
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Reserva> reservas = new ArrayList<>();
@@ -124,8 +115,8 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void getHistoricReservations(String userId, DataCallback<List<Reserva>> callback) {
-        db.collection("reservas")
-                .whereEqualTo("usuario", userId)
+        db.collection(COLLECTION_RESERVAS)
+                .whereEqualTo(FIELD_USUARIO, userId)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Reserva> historic = new ArrayList<>();
@@ -142,28 +133,26 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void getCurrentReservation(String userId, DataCallback<Reserva> callback) {
-        db.collection("reservas")
-                .whereEqualTo("usuario", userId)
-                .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+        db.collection(COLLECTION_RESERVAS)
+                .whereEqualTo(FIELD_USUARIO, userId)
+                .whereEqualTo(FIELD_ESTADO, Reserva.Estado.ACTIVA.name())
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    Reserva current = null;
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        Reserva reserva = doc.toObject(Reserva.class);
-                        // Aquí puedes agregar lógica para filtrar la reserva actual según la hora
-                        current = reserva;
-                        break;
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        Reserva reserva = queryDocumentSnapshots.iterator().next().toObject(Reserva.class);
+                        callback.onSuccess(reserva);
+                    } else {
+                        callback.onSuccess(null);
                     }
-                    callback.onSuccess(current);
                 })
                 .addOnFailureListener(callback::onFailure);
     }
 
     @Override
     public void getNextReservation(String userId, DataCallback<Reserva> callback) {
-        db.collection("reservas")
-                .whereEqualTo("usuario", userId)
-                .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+        db.collection(COLLECTION_RESERVAS)
+                .whereEqualTo(FIELD_USUARIO, userId)
+                .whereEqualTo(FIELD_ESTADO, Reserva.Estado.ACTIVA.name())
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     Reserva next = null;
@@ -182,15 +171,15 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void deleteReservation(String reservationId, DataCallback<Boolean> callback) {
-        db.collection("reservas").document(reservationId)
-                .update("estado", Reserva.Estado.CANCELADA.name())
+        db.collection(COLLECTION_RESERVAS).document(reservationId)
+                .update(FIELD_ESTADO, Reserva.Estado.CANCELADA.name())
                 .addOnSuccessListener(aVoid -> callback.onSuccess(true))
                 .addOnFailureListener(callback::onFailure);
     }
 
     @Override
     public void updateReservation(Reserva reserva, DataCallback<Boolean> callback) {
-        db.collection("reservas").document(reserva.getId())
+        db.collection(COLLECTION_RESERVAS).document(reserva.getId())
                 .set(reserva)
                 .addOnSuccessListener(aVoid -> callback.onSuccess(true))
                 .addOnFailureListener(callback::onFailure);
@@ -205,10 +194,10 @@ public class FirebaseDataSource implements DataSource {
             return;
         }
         // Comprobar si ya existe una reserva activa para ese usuario y fecha
-        db.collection("reservas")
-                .whereEqualTo("usuario", reserva.getUsuario())
-                .whereEqualTo("fecha", reserva.getFecha())
-                .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+        db.collection(COLLECTION_RESERVAS)
+                .whereEqualTo(FIELD_USUARIO, reserva.getUsuario())
+                .whereEqualTo(FIELD_FECHA, reserva.getFecha())
+                .whereEqualTo(FIELD_ESTADO, Reserva.Estado.ACTIVA.name())
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
@@ -219,13 +208,13 @@ public class FirebaseDataSource implements DataSource {
                     checkAvailability(reserva, null, new DataCallback<Boolean>() {
                         @Override
                         public void onSuccess(Boolean available) {
-                            if (!available) {
+                            if (Boolean.FALSE.equals(available)) {
                                 callback.onSuccess(false);
                                 return;
                             }
-                            String id = db.collection("reservas").document().getId();
+                            String id = db.collection(COLLECTION_RESERVAS).document().getId();
                             reserva.setId(id);
-                            db.collection("reservas").document(id)
+                            db.collection(COLLECTION_RESERVAS).document(id)
                                     .set(reserva)
                                     .addOnSuccessListener(aVoid -> callback.onSuccess(true))
                                     .addOnFailureListener(callback::onFailure);
@@ -241,7 +230,7 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void getAvailablePlazas(String tipo, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
-        db.collection("plazas")
+        db.collection(COLLECTION_PLAZAS)
                 .whereEqualTo("tipo", tipo)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
@@ -250,28 +239,48 @@ public class FirebaseDataSource implements DataSource {
                         Plaza plaza = doc.toObject(Plaza.class);
                         disponibles.add(plaza.getId());
                     }
-                    // Ahora filtrar por reservas activas en ese horario
-                    db.collection("reservas")
-                            .whereEqualTo("fecha", fecha)
-                            .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
-                            .get()
-                            .addOnSuccessListener(reservasSnap -> {
-                                List<String> ocupadas = new ArrayList<>();
-                                for (QueryDocumentSnapshot rdoc : reservasSnap) {
-                                    Reserva r = rdoc.toObject(Reserva.class);
-                                    if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
-                                        continue;
-                                    }
-                                    if (r.getHora().getHoraInicio() < horaFin && r.getHora().getHoraFin() > horaInicio) {
-                                        ocupadas.add(r.getPlaza().getId());
-                                    }
-                                }
-                                disponibles.removeAll(ocupadas);
-                                callback.onSuccess(disponibles);
-                            })
-                            .addOnFailureListener(callback::onFailure);
+                    filtrarPlazasOcupadasYResponder(disponibles, fecha, horaInicio, horaFin, excludeReservationId, callback);
                 })
                 .addOnFailureListener(callback::onFailure);
+    }
+
+    private void filtrarPlazasOcupadasYResponder(List<String> disponibles, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
+        db.collection(COLLECTION_RESERVAS)
+                .whereEqualTo(FIELD_FECHA, fecha)
+                .whereEqualTo(FIELD_ESTADO, Reserva.Estado.ACTIVA.name())
+                .get()
+                .addOnSuccessListener(reservasSnap -> {
+                    List<String> ocupadas = new ArrayList<>();
+                    for (QueryDocumentSnapshot rdoc : reservasSnap) {
+                        Reserva r = rdoc.toObject(Reserva.class);
+                        if (shouldExcludeReservation(r, excludeReservationId)) continue;
+                        if (isPlazaOcupadaEnHorario(r, horaInicio, horaFin)) {
+                            ocupadas.add(r.getPlaza().getId());
+                        }
+                    }
+                    disponibles.removeAll(ocupadas);
+                    disponibles.sort((id1, id2) -> {
+                        String[] p1 = id1.split("-");
+                        String[] p2 = id2.split("-");
+                        int cmp = p1[0].compareTo(p2[0]);
+                        if (cmp != 0) return cmp;
+                        try {
+                            return Integer.compare(Integer.parseInt(p1[1]), Integer.parseInt(p2[1]));
+                        } catch (NumberFormatException e) {
+                            return p1[1].compareTo(p2[1]);
+                        }
+                    });
+                    callback.onSuccess(disponibles);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    private boolean shouldExcludeReservation(Reserva r, String excludeReservationId) {
+        return excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId());
+    }
+
+    private boolean isPlazaOcupadaEnHorario(Reserva r, long horaInicio, long horaFin) {
+        return r.getHora().getHoraInicio() < horaFin && r.getHora().getHoraFin() > horaInicio;
     }
 
     @Override
@@ -282,7 +291,7 @@ public class FirebaseDataSource implements DataSource {
                 if (disponibles.isEmpty()) {
                     callback.onSuccess(null);
                 } else {
-                    int idx = (int) (Math.random() * disponibles.size());
+                    int idx = random.nextInt(disponibles.size());
                     callback.onSuccess(disponibles.get(idx));
                 }
             }
@@ -295,21 +304,21 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void checkAvailability(Reserva reserva, String excludeReservationId, DataCallback<Boolean> callback) {
-        db.collection("reservas")
+        db.collection(COLLECTION_RESERVAS)
                 .whereEqualTo("plaza.id", reserva.getPlaza().getId())
-                .whereEqualTo("fecha", reserva.getFecha())
-                .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
+                .whereEqualTo(FIELD_FECHA, reserva.getFecha())
+                .whereEqualTo(FIELD_ESTADO, Reserva.Estado.ACTIVA.name())
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     boolean available = true;
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         Reserva r = doc.toObject(Reserva.class);
-                        if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
-                            continue;
-                        }
-                        if (r.getHora().getHoraInicio() < reserva.getHora().getHoraFin() && r.getHora().getHoraFin() > reserva.getHora().getHoraInicio()) {
+                        boolean isExcluded = excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId());
+                        boolean overlaps = r.getHora().getHoraInicio() < reserva.getHora().getHoraFin() &&
+                                r.getHora().getHoraFin() > reserva.getHora().getHoraInicio();
+                        if (!isExcluded && overlaps) {
                             available = false;
-                            break;
+                            break; // Solo un break, ningún continue
                         }
                     }
                     callback.onSuccess(available);
@@ -319,9 +328,9 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void hasReservationOnDate(String userId, String date, DataCallback<Boolean> callback) {
-        db.collection("reservas")
-                .whereEqualTo("usuario", userId)
-                .whereEqualTo("fecha", date)
+        db.collection(COLLECTION_RESERVAS)
+                .whereEqualTo(FIELD_USUARIO, userId)
+                .whereEqualTo(FIELD_FECHA, date)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     boolean has = !queryDocumentSnapshots.isEmpty();
@@ -332,48 +341,62 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void getAvailableNumbers(String tipo, String row, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
-        db.collection("plazas")
+        db.collection(COLLECTION_PLAZAS)
                 .whereEqualTo("tipo", tipo)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
-                    List<String> disponibles = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        Plaza plaza = doc.toObject(Plaza.class);
-                        if (plaza.getId().startsWith(row + "-")) {
-                            disponibles.add(plaza.getId().split("-")[1]);
-                        }
-                    }
-                    // Filtrar por reservas activas
-                    db.collection("reservas")
-                            .whereEqualTo("fecha", fecha)
-                            .whereEqualTo("estado", Reserva.Estado.ACTIVA.name())
-                            .get()
-                            .addOnSuccessListener(reservasSnap -> {
-                                List<String> ocupadas = new ArrayList<>();
-                                for (QueryDocumentSnapshot rdoc : reservasSnap) {
-                                    Reserva r = rdoc.toObject(Reserva.class);
-                                    if (excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId())) {
-                                        continue;
-                                    }
-                                    if (r.getPlaza().getId().startsWith(row + "-") && r.getHora().getHoraInicio() < horaFin && r.getHora().getHoraFin() > horaInicio) {
-                                        ocupadas.add(r.getPlaza().getId().split("-")[1]);
-                                    }
-                                }
-                                disponibles.removeAll(ocupadas);
-                                callback.onSuccess(disponibles);
-                            })
-                            .addOnFailureListener(callback::onFailure);
+                    List<String> disponibles = filtrarPlazasPorFila(queryDocumentSnapshots, row);
+                    filtrarOcupadasYResponder(disponibles, row, fecha, horaInicio, horaFin, excludeReservationId, callback);
                 })
                 .addOnFailureListener(callback::onFailure);
     }
 
+    private List<String> filtrarPlazasPorFila(Iterable<QueryDocumentSnapshot> plazasSnap, String row) {
+        List<String> disponibles = new ArrayList<>();
+        for (QueryDocumentSnapshot doc : plazasSnap) {
+            Plaza plaza = doc.toObject(Plaza.class);
+            if (plaza.getId().startsWith(row + "-")) {
+                disponibles.add(plaza.getId().split("-")[1]);
+            }
+        }
+        return disponibles;
+    }
+
+    private void filtrarOcupadasYResponder(List<String> disponibles, String row, String fecha, long horaInicio, long horaFin, String excludeReservationId, DataCallback<List<String>> callback) {
+        db.collection(COLLECTION_RESERVAS)
+                .whereEqualTo(FIELD_FECHA, fecha)
+                .whereEqualTo(FIELD_ESTADO, Reserva.Estado.ACTIVA.name())
+                .get()
+                .addOnSuccessListener(reservasSnap -> {
+                    List<String> ocupadas = new ArrayList<>();
+                    for (QueryDocumentSnapshot rdoc : reservasSnap) {
+                        Reserva r = rdoc.toObject(Reserva.class);
+                        if (reservaDebeExcluirse(r, excludeReservationId)) continue;
+                        if (reservaOcupaPlazaEnFila(r, row, horaInicio, horaFin)) {
+                            ocupadas.add(r.getPlaza().getId().split("-")[1]);
+                        }
+                    }
+                    disponibles.removeAll(ocupadas);
+                    callback.onSuccess(disponibles);
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    private boolean reservaDebeExcluirse(Reserva r, String excludeReservationId) {
+        return excludeReservationId != null && !excludeReservationId.isEmpty() && excludeReservationId.equals(r.getId());
+    }
+
+    private boolean reservaOcupaPlazaEnFila(Reserva r, String row, long horaInicio, long horaFin) {
+        return r.getPlaza().getId().startsWith(row + "-") &&
+                r.getHora().getHoraInicio() < horaFin &&
+                r.getHora().getHoraFin() > horaInicio;
+    }
+
     @Override
     public void checkUserExists(String email, DataCallback<Boolean> callback) {
-        db.collection("users").document(email).get()
-            .addOnSuccessListener(documentSnapshot -> {
-                callback.onSuccess(documentSnapshot.exists());
-            })
-            .addOnFailureListener(callback::onFailure);
+        db.collection(COLLECTION_USERS).document(email).get()
+                .addOnSuccessListener(documentSnapshot -> callback.onSuccess(documentSnapshot.exists()))
+                .addOnFailureListener(callback::onFailure);
     }
 
     @Override
@@ -381,7 +404,7 @@ public class FirebaseDataSource implements DataSource {
         checkUserExists(email, new DataCallback<Boolean>() {
             @Override
             public void onSuccess(Boolean exists) {
-                if (!exists) {
+                if (Boolean.FALSE.equals(exists)) {
                     callback.onSuccess(false);
                     return;
                 }
@@ -403,8 +426,8 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void deleteUserReservations(String email, DataCallback<Boolean> callback) {
-        db.collection("reservas")
-            .whereEqualTo("usuario", email)
+        db.collection(COLLECTION_RESERVAS)
+            .whereEqualTo(FIELD_USUARIO, email)
             .get()
             .addOnSuccessListener(queryDocumentSnapshots -> {
                 for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
@@ -417,63 +440,61 @@ public class FirebaseDataSource implements DataSource {
 
     @Override
     public void deleteUser(String email, String password, DataCallback<Boolean> callback) {
-        db.collection("users").document(email).delete()
-            .addOnSuccessListener(aVoid -> {
-                deleteUserReservations(email, new DataCallback<Boolean>() {
-                    @Override
-                    public void onSuccess(Boolean result) {
-                        // Buscar el usuario en Auth y eliminarlo si está logueado
-                        FirebaseUser currentUser = mAuth.getCurrentUser();
-                        if (currentUser != null && currentUser.getEmail() != null && currentUser.getEmail().equals(email)) {
-                            currentUser.delete()
-                                .addOnSuccessListener(aVoid2 -> callback.onSuccess(true))
-                                .addOnFailureListener(e -> callback.onFailure(e));
-                        } else {
-                            // Intentar loguear para eliminar si no está logueado
-                            mAuth.signInWithEmailAndPassword(email, password)
-                                .addOnSuccessListener(authResult -> {
-                                    FirebaseUser userToDelete = mAuth.getCurrentUser();
-                                    if (userToDelete != null) {
-                                        userToDelete.delete()
-                                            .addOnSuccessListener(aVoid3 -> callback.onSuccess(true))
-                                            .addOnFailureListener(e -> callback.onFailure(e));
-                                    } else {
-                                        callback.onSuccess(true);
-                                    }
-                                })
-                                .addOnFailureListener(e -> callback.onSuccess(true)); // Si no existe en Auth, consideramos borrado
-                        }
+        db.collection(COLLECTION_USERS).document(email).delete()
+            .addOnSuccessListener(aVoid -> deleteUserReservations(email, new DataCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean result) {
+                    // Buscar el usuario en Auth y eliminarlo si está logueado
+                    FirebaseUser currentUser = mAuth.getCurrentUser();
+                    if (currentUser != null && currentUser.getEmail() != null && currentUser.getEmail().equals(email)) {
+                        currentUser.delete()
+                            .addOnSuccessListener(aVoid2 -> callback.onSuccess(true))
+                            .addOnFailureListener(callback::onFailure);
+                    } else {
+                        // Intentar loguear para eliminar si no está logueado
+                        mAuth.signInWithEmailAndPassword(email, password)
+                            .addOnSuccessListener(authResult -> {
+                                FirebaseUser userToDelete = mAuth.getCurrentUser();
+                                if (userToDelete != null) {
+                                    userToDelete.delete()
+                                        .addOnSuccessListener(aVoid3 -> callback.onSuccess(true))
+                                        .addOnFailureListener(callback::onFailure);
+                                } else {
+                                    callback.onSuccess(true);
+                                }
+                            })
+                            .addOnFailureListener(e -> callback.onSuccess(true)); // Si no existe en Auth, consideramos borrado
                     }
-                    @Override
-                    public void onFailure(Exception e) {
-                        callback.onFailure(e);
-                    }
-                });
-            })
+                }
+                @Override
+                public void onFailure(Exception e) {
+                    callback.onFailure(e);
+                }
+            }))
             .addOnFailureListener(callback::onFailure);
     }
 
     public void addPlaza(Plaza plaza, DataCallback<Boolean> callback) {
-        db.collection("plazas").document(plaza.getId()).set(plaza)
+        db.collection(COLLECTION_PLAZAS).document(plaza.getId()).set(plaza)
             .addOnSuccessListener(aVoid -> callback.onSuccess(true))
             .addOnFailureListener(callback::onFailure);
     }
 
     public void deletePlaza(String plazaId, DataCallback<Boolean> callback) {
-        db.collection("plazas").document(plazaId).delete()
+        db.collection(COLLECTION_PLAZAS).document(plazaId).delete()
             .addOnSuccessListener(aVoid -> callback.onSuccess(true))
             .addOnFailureListener(callback::onFailure);
     }
 
     public void deleteReserva(String reservaId, DataCallback<Boolean> callback) {
-        db.collection("reservas").document(reservaId).delete()
+        db.collection(COLLECTION_RESERVAS).document(reservaId).delete()
             .addOnSuccessListener(aVoid -> callback.onSuccess(true))
             .addOnFailureListener(callback::onFailure);
     }
 
     @Override
     public void getAvailableRows(String tipo, DataCallback<List<String>> callback) {
-        db.collection("plazas")
+        db.collection(COLLECTION_PLAZAS)
             .whereEqualTo("tipo", tipo)
             .get()
             .addOnSuccessListener(queryDocumentSnapshots -> {

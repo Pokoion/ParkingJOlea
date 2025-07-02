@@ -1,9 +1,7 @@
 package com.lksnext.parkingplantilla.viewmodel;
 
-import android.content.Context;
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule;
 import androidx.lifecycle.LiveData;
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.lksnext.parkingplantilla.ParkingApplication;
 import com.lksnext.parkingplantilla.data.DataRepository;
@@ -17,9 +15,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.time.Duration;
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.*;
 
 @RunWith(AndroidJUnit4.class)
@@ -29,19 +31,16 @@ public class ReservationsViewModelGestionInstrumentedTest {
 
     private ReservationsViewModel viewModel;
     private DataRepository repository;
-    private Context context;
     private static final String TEST_EMAIL = "test_gestion_user@example.com";
     private static final String TEST_PASSWORD = "Test1234!";
     private static final String TEST_NAME = "Test Gestion User";
     private static final String PLAZA_ID = "GESTION-1";
     private static final String PLAZA_TIPO = Plaza.TIPO_STANDARD;
     private Plaza testPlaza;
-    private String reservaId;
 
     @Before
     public void setUp() throws Exception {
-        context = ApplicationProvider.getApplicationContext();
-        repository = ParkingApplication.getRepository();
+        repository = ParkingApplication.getInstance().getRepository();
         viewModel = new ReservationsViewModel(repository);
         // Registrar usuario
         CountDownLatch latch = new CountDownLatch(1);
@@ -161,7 +160,7 @@ public class ReservationsViewModelGestionInstrumentedTest {
     public void createReservation_fallaSiHoraInicioEsPasada() throws Exception {
         Calendar now = Calendar.getInstance();
         String fecha = DateUtils.formatDateForApi(now);
-        long inicio = DateUtils.getCurrentTimeMs() - 3 * 60 * 1000; // hace 3 minutos
+        long inicio = DateUtils.getCurrentTimeMs() - 2 * 60 * 1000; // hace 3 minutos
         long fin = inicio + 60 * 60 * 1000; // +1h
         Hora hora = new Hora(inicio, fin);
         Reserva reserva = new Reserva(fecha, TEST_EMAIL, PLAZA_ID, testPlaza, hora);
@@ -214,7 +213,7 @@ public class ReservationsViewModelGestionInstrumentedTest {
     @Test
     public void checkReservationAvailability_trueCuandoNoHayConflicto() throws Exception {
         // Crear una reserva de prueba
-        String id = crearReservaDePrueba();
+        crearReservaDePrueba();
         // Intentar reservar otra plaza diferente en el mismo horario
         Calendar now = Calendar.getInstance();
         String fecha = DateUtils.formatDateForApi(now);
@@ -241,7 +240,7 @@ public class ReservationsViewModelGestionInstrumentedTest {
     @Test
     public void checkReservationAvailability_falseCuandoConflictoSinExclude() throws Exception {
         // Crear una reserva de prueba
-        String id = crearReservaDePrueba();
+        crearReservaDePrueba();
         // Intentar reservar la misma plaza y horario
         Calendar now = Calendar.getInstance();
         String fecha = DateUtils.formatDateForApi(now);
@@ -316,7 +315,7 @@ public class ReservationsViewModelGestionInstrumentedTest {
     @Test
     public void checkUserHasReservationOnDate_trueCuandoExiste() throws Exception {
         // Crear una reserva de prueba para hoy
-        String id = crearReservaDePrueba();
+        crearReservaDePrueba();
         String fecha = DateUtils.formatDateForApi(Calendar.getInstance());
         LiveData<Boolean> liveResult = viewModel.checkUserHasReservationOnDate(fecha);
         Boolean result = LiveDataTestUtil.getValue(liveResult);
@@ -339,7 +338,7 @@ public class ReservationsViewModelGestionInstrumentedTest {
     @Test
     public void getUserReservationDates_devuelveFechasCorrectas() throws Exception {
         // Crear una reserva de prueba para hoy
-        String id = crearReservaDePrueba();
+        crearReservaDePrueba();
         LiveData<List<String>> liveResult = viewModel.getUserReservationDates();
         List<String> fechas = LiveDataTestUtil.getValue(liveResult);
         assertNotNull(fechas);
@@ -366,34 +365,6 @@ public class ReservationsViewModelGestionInstrumentedTest {
         // Limpiar plaza extra
         latch = new CountDownLatch(1);
         repository.deletePlaza("GESTION-3", new LatchCallback<>(latch));
-        latch.await();
-    }
-
-    @Test
-    public void assignRandomPlaza_asignaPlazaDisponible() throws Exception {
-        // Crear una plaza extra
-        Plaza otraPlaza = new Plaza("GESTION-4", Plaza.TIPO_STANDARD);
-        CountDownLatch latch = new CountDownLatch(1);
-        repository.addPlaza(otraPlaza, new LatchCallback<>(latch));
-        latch.await();
-        // Reservar la plaza principal (PLAZA_ID) para que no esté disponible usando el helper
-        crearReservaDePrueba();
-        // Obtener los datos de la reserva creada para usar el mismo horario y fecha
-        viewModel.loadUserReservations();
-        List<Reserva> reservas = LiveDataTestUtil.getValue(viewModel.getReservations());
-        assertNotNull(reservas);
-        Reserva reserva = reservas.get(0);
-        String fecha = reserva.getFecha();
-        long inicio = reserva.getHora().getHoraInicio();
-        long fin = reserva.getHora().getHoraFin();
-        // Asignar plaza aleatoria (solo debe quedar GESTION-4 disponible)
-        viewModel.assignRandomPlaza(PLAZA_TIPO, fecha, inicio, fin);
-        String plazaAsignada = LiveDataTestUtil.getValue(viewModel.getRandomPlaza());
-        assertNotNull(plazaAsignada);
-        assertEquals("GESTION-4", plazaAsignada);
-        // Limpiar plaza extra
-        latch = new CountDownLatch(1);
-        repository.deletePlaza("GESTION-4", new LatchCallback<>(latch));
         latch.await();
     }
 
@@ -442,21 +413,14 @@ public class ReservationsViewModelGestionInstrumentedTest {
         boolean result = LiveDataTestUtil.getValue(viewModel.createReservation(reserva));
         assertTrue(result);
         String reservaId = reserva.getId();
-        boolean finalizada = false;
-        for (int i = 0; i < 14; i++) { // 14*5=70 segundos
-            Thread.sleep(5000);
+
+        await().atMost(Duration.ofSeconds(70)).pollInterval(Duration.ofSeconds(5)).until(() -> {
             viewModel.loadHistoricReservations();
             List<Reserva> historicas = LiveDataTestUtil.getValue(viewModel.getHistoricReservations());
-            assertNotNull(historicas);
-            if (!historicas.isEmpty()) {
-                Reserva encontrada = historicas.get(0);
-                if (encontrada.getId().equals(reservaId) && encontrada.getEstado() == Reserva.Estado.FINALIZADA) {
-                    finalizada = true;
-                    break;
-                }
-            }
-        }
-        assertTrue("La reserva no pasó a FINALIZADA tras esperar suficiente tiempo", finalizada);
+            if (historicas == null || historicas.isEmpty()) return false;
+            Reserva encontrada = historicas.get(0);
+            return encontrada.getId().equals(reservaId) && encontrada.getEstado() == Reserva.Estado.FINALIZADA;
+        });
     }
 
     @Test

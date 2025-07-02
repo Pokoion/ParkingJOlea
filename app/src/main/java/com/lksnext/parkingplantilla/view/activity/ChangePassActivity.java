@@ -5,22 +5,18 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.lifecycle.ViewModelProvider;
 import com.lksnext.parkingplantilla.databinding.ActivityChangepassBinding;
 import com.lksnext.parkingplantilla.viewmodel.ChangePassViewModel;
 
 public class ChangePassActivity extends AppCompatActivity {
-    private ActivityChangepassBinding binding;
-    private ChangePassViewModel changePassViewModel;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        binding = ActivityChangepassBinding.inflate(getLayoutInflater());
+        ActivityChangepassBinding binding = ActivityChangepassBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        changePassViewModel = new ViewModelProvider(this).get(ChangePassViewModel.class);
+        ChangePassViewModel changePassViewModel = new ViewModelProvider(this).get(ChangePassViewModel.class);
 
         changePassViewModel.getStatusMessage().observe(this, msg -> {
             if (msg != null && !msg.isEmpty()) {

@@ -7,31 +7,21 @@ import android.content.SharedPreferences;
 import androidx.appcompat.app.AppCompatDelegate;
 
 import com.lksnext.parkingplantilla.data.DataRepository;
-import com.lksnext.parkingplantilla.data.local.LocalDataSource;
 import com.lksnext.parkingplantilla.data.firebase.FirebaseDataSource;
 import com.lksnext.parkingplantilla.data.repository.DataSource;
 import com.lksnext.parkingplantilla.viewmodel.UserViewModel;
 
 public class ParkingApplication extends Application {
 
-    private static Context context;
-    private static DataRepository repository;
     private static ParkingApplication instance;
+    private DataRepository repository;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        context = getApplicationContext();
         instance = this;
-
-        // Aplicar el tema guardado al inicio
         applyStoredTheme();
-
-        // Initialize the data source
-        //DataSource dataSource = new LocalDataSource();
         DataSource dataSource = new FirebaseDataSource();
-
-        // Initialize repository with the data source
         repository = DataRepository.getInstance(dataSource, getApplicationContext());
     }
 
@@ -53,11 +43,15 @@ public class ParkingApplication extends Application {
         }
     }
 
-    public static DataRepository getRepository() {
-        return repository;
-    }
-
     public static Context getAppContext() {
         return instance.getApplicationContext();
+    }
+
+    public static ParkingApplication getInstance() {
+        return instance;
+    }
+
+    public DataRepository getRepository() {
+        return repository;
     }
 }
