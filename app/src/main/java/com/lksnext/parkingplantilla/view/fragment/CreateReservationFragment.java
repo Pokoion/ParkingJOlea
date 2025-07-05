@@ -2,7 +2,10 @@ package com.lksnext.parkingplantilla.view.fragment;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,11 +13,13 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.activity.OnBackPressedCallback;
 
 import com.lksnext.parkingplantilla.R;
 import com.lksnext.parkingplantilla.adapters.ReservationTypeAdapter;
@@ -69,15 +74,46 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         setupListeners();
         setupSpotSelectionUI();
         observeViewModel();
+
+        // Manejar el botón atrás del sistema
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                viewModel.clearTempSelection();
+                Navigation.findNavController(requireActivity(), R.id.flFragment).navigateUp();
+            }
+        });
+    }
+
+    private void setToolbarNavigationIconWithId() {
+        TypedValue typedValue = new TypedValue();
+        Resources.Theme theme = requireContext().getTheme();
+        theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
+        int color = typedValue.data;
+
+        Drawable navIcon = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_arrow_back);
+        if (navIcon != null) {
+            navIcon.setTint(color);
+            binding.toolbar.setNavigationIcon(navIcon);
+        }
+
+        binding.toolbar.post(() -> {
+            for (int i = 0; i < binding.toolbar.getChildCount(); i++) {
+                View child = binding.toolbar.getChildAt(i);
+                if (child instanceof android.widget.ImageButton) {
+                    child.setId(R.id.toolbar_navigation);
+                    break;
+                }
+            }
+        });
     }
 
     private void setupToolbar() {
-        binding.toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
+        setToolbarNavigationIconWithId();
         binding.toolbar.setNavigationOnClickListener(v -> {
             // Limpiar selección temporal SOLO al salir del flujo de crear reserva
             viewModel.clearTempSelection();
-            NavController navController = Navigation.findNavController(requireActivity(), R.id.flFragment);
-            navController.popBackStack(R.id.mainFragment, false);
+            Navigation.findNavController(requireActivity(), R.id.flFragment).navigateUp();
         });
         binding.toolbar.setTitle(isEditMode ? "Editar Reserva" : "Nueva Reserva");
     }
@@ -262,7 +298,7 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
             updateAvailableSpotsUI("", false);
             return;
         }
-        updateAvailablePlazas(); // <-- Actualiza availablePlazas cada vez que cambian los filtros
+        updateAvailablePlazas();
         String apiDate = DateUtils.formatDateForApi(selectedDate);
         viewModel.checkUserHasReservationOnDate(apiDate).observe(getViewLifecycleOwner(), hasReservation -> {
             if (hasReservation != null && hasReservation && !(isEditMode && reservationId != null)) {
@@ -449,14 +485,13 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         binding.btnSaveReservation.setVisibility(View.GONE);
         binding.btnNextStep.setVisibility(View.VISIBLE);
         binding.toolbar.setTitle(isEditMode ? "Editar Reserva" : "Nueva Reserva");
-        // Cambiar icono de la toolbar para volver atrás según modo
-        binding.toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
+        setToolbarNavigationIconWithId();
         binding.toolbar.setNavigationOnClickListener(v -> {
             // Limpiar selección temporal SOLO al salir del flujo de crear reserva
             viewModel.clearTempSelection();
-            NavController navController = Navigation.findNavController(requireActivity(), R.id.flFragment);
-            navController.popBackStack(R.id.mainFragment, false);
+            Navigation.findNavController(requireActivity(), R.id.flFragment).navigateUp();
         });
+        checkAvailableSpots();
     }
 
     private void showStep2() {
@@ -465,8 +500,7 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         binding.btnSaveReservation.setVisibility(View.VISIBLE);
         binding.btnNextStep.setVisibility(View.GONE);
         binding.toolbar.setTitle("Seleccionar plaza");
-        // Cambiar icono de la toolbar para volver al paso 1
-        binding.toolbar.setNavigationIcon(R.drawable.ic_arrow_back);
+        setToolbarNavigationIconWithId();
         binding.toolbar.setNavigationOnClickListener(v -> showStep1());
         // Cargar filas y números disponibles
         String apiDate = DateUtils.formatDateForApi(selectedDate);
@@ -479,7 +513,6 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
             setRandomSpotSelectionUI();
             viewModel.loadAvailablePlazasAndExtractRowsNumbers(selectedType, apiDate, startTimeMs, endTimeMs);
         }
-        // Cambiar texto del botón según modo
         binding.btnSaveReservation.setText(isEditMode ? "Actualizar reserva" : "Crear reserva");
     }
 

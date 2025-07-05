@@ -13,7 +13,6 @@ android {
         targetSdkVersion 35
         versionCode 1
         versionName "1.0.0"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -34,13 +33,15 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    // 🔧 Forzar versión de Hamcrest para evitar conflictos
     configurations.all {
         resolutionStrategy.eachDependency { details ->
             if (details.requested.group == 'org.hamcrest') {
                 details.useVersion '2.2'
             }
         }
+
+        // ❗ Excluir globalmente protobuf-lite para evitar conflicto con protobuf-javalite
+        exclude group: "com.google.protobuf", module: "protobuf-lite"
     }
 }
 
@@ -53,13 +54,23 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'androidx.cardview:cardview:1.0.0'
-    implementation "androidx.work:work-runtime:2.9.0"
+
+    // ❗ Excluye protobuf-lite de esta lib también
+    implementation("androidx.work:work-runtime:2.9.0") {
+        exclude group: "com.google.protobuf", module: "protobuf-lite"
+    }
+
     implementation platform('com.google.firebase:firebase-bom:33.15.0')
     implementation 'com.google.firebase:firebase-analytics'
-    implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore")
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
 
-    testImplementation 'junit:junit:4.13.2' // fija versión
+    // ✅ Añade explícitamente protobuf-javalite
+    implementation "com.google.protobuf:protobuf-javalite:3.25.5"
+
+    implementation 'androidx.test.espresso:espresso-contrib:3.6.1'
+
+    testImplementation 'junit:junit:4.13.2'
     testImplementation 'androidx.arch.core:core-testing:2.2.0'
     testImplementation('org.awaitility:awaitility:4.2.0') {
         exclude group: 'org.hamcrest', module: 'hamcrest-core'
@@ -78,6 +89,12 @@ dependencies {
         exclude group: 'org.hamcrest', module: 'hamcrest'
     }
     androidTestImplementation 'org.hamcrest:hamcrest:2.2'
+    androidTestImplementation('androidx.test.espresso:espresso-contrib:3.6.1') {
+        exclude group: 'com.android.support', module: 'support-annotations'
+        exclude group: 'com.android.support', module: 'support-v4'
+        exclude group: 'com.android.support', module: 'design'
+        exclude group: 'com.android.support', module: 'recyclerview-v7'
+    }
 }
 
 apply plugin: "org.sonarqube"

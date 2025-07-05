@@ -193,39 +193,40 @@ public class FirebaseDataSource implements DataSource {
             callback.onFailure(new Exception("La hora de inicio no puede ser más de 2 minutos anterior al momento actual"));
             return;
         }
-        // Comprobar si ya existe una reserva activa para ese usuario y fecha
-        db.collection(COLLECTION_RESERVAS)
-                .whereEqualTo(FIELD_USUARIO, reserva.getUsuario())
-                .whereEqualTo(FIELD_FECHA, reserva.getFecha())
-                .whereEqualTo(FIELD_ESTADO, Reserva.Estado.ACTIVA.name())
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        callback.onFailure(new Exception("Ya tienes una reserva activa para este día"));
-                        return;
+        // Comprobar si ya existe una reserva activa o finalizada para ese usuario y fecha
+        hasReservationOnDate(reserva.getUsuario(), reserva.getFecha(), new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean exists) {
+                if (Boolean.TRUE.equals(exists)) {
+                    callback.onFailure(new Exception("Ya tienes una reserva activa o finalizada para este día"));
+                    return;
+                }
+                // Comprobar disponibilidad antes de crear la reserva (sin excluir ninguna, porque es nueva)
+                checkAvailability(reserva, null, new DataCallback<Boolean>() {
+                    @Override
+                    public void onSuccess(Boolean available) {
+                        if (Boolean.FALSE.equals(available)) {
+                            callback.onSuccess(false);
+                            return;
+                        }
+                        String id = db.collection(COLLECTION_RESERVAS).document().getId();
+                        reserva.setId(id);
+                        db.collection(COLLECTION_RESERVAS).document(id)
+                                .set(reserva)
+                                .addOnSuccessListener(aVoid -> callback.onSuccess(true))
+                                .addOnFailureListener(callback::onFailure);
                     }
-                    // Comprobar disponibilidad antes de crear la reserva (sin excluir ninguna, porque es nueva)
-                    checkAvailability(reserva, null, new DataCallback<Boolean>() {
-                        @Override
-                        public void onSuccess(Boolean available) {
-                            if (Boolean.FALSE.equals(available)) {
-                                callback.onSuccess(false);
-                                return;
-                            }
-                            String id = db.collection(COLLECTION_RESERVAS).document().getId();
-                            reserva.setId(id);
-                            db.collection(COLLECTION_RESERVAS).document(id)
-                                    .set(reserva)
-                                    .addOnSuccessListener(aVoid -> callback.onSuccess(true))
-                                    .addOnFailureListener(callback::onFailure);
-                        }
-                        @Override
-                        public void onFailure(Exception e) {
-                            callback.onFailure(e);
-                        }
-                    });
-                })
-                .addOnFailureListener(callback::onFailure);
+                    @Override
+                    public void onFailure(Exception e) {
+                        callback.onFailure(e);
+                    }
+                });
+            }
+            @Override
+            public void onFailure(Exception e) {
+                callback.onFailure(e);
+            }
+        });
     }
 
     @Override
@@ -331,6 +332,7 @@ public class FirebaseDataSource implements DataSource {
         db.collection(COLLECTION_RESERVAS)
                 .whereEqualTo(FIELD_USUARIO, userId)
                 .whereEqualTo(FIELD_FECHA, date)
+                .whereIn(FIELD_ESTADO, java.util.Arrays.asList(Reserva.Estado.ACTIVA, Reserva.Estado.FINALIZADA))
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     boolean has = !queryDocumentSnapshots.isEmpty();
