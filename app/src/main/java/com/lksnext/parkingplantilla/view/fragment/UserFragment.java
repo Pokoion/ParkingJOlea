@@ -27,8 +27,6 @@ public class UserFragment extends Fragment {
 
     private FragmentUserBinding binding;
     private UserViewModel userViewModel;
-    private ActivityResultLauncher<String> notificationPermissionLauncher;
-    private android.widget.CompoundButton lastSwitchTriedToEnable = null;
     private UserPreferencesManager userPreferencesManager;
 
     @Override
@@ -40,17 +38,6 @@ public class UserFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        notificationPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (Boolean.FALSE.equals(isGranted) && lastSwitchTriedToEnable != null) {
-                        lastSwitchTriedToEnable.setChecked(false);
-                    }
-                    lastSwitchTriedToEnable = null;
-                }
-        );
-
         userPreferencesManager = new UserPreferencesManager(requireContext());
         userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
         LoginViewModel loginViewModel = new ViewModelProvider(requireActivity()).get(LoginViewModel.class);
@@ -115,7 +102,15 @@ public class UserFragment extends Fragment {
     private void requestNotificationPermissionIfNeeded(android.widget.CompoundButton buttonView) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
                 requireContext().checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            lastSwitchTriedToEnable = buttonView;
+            final android.widget.CompoundButton switchTriedToEnable = buttonView;
+            ActivityResultLauncher<String> notificationPermissionLauncher = registerForActivityResult(
+                    new ActivityResultContracts.RequestPermission(),
+                    isGranted -> {
+                        if (Boolean.FALSE.equals(isGranted)) {
+                            switchTriedToEnable.setChecked(false);
+                        }
+                    }
+            );
             notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS);
         }
     }
@@ -135,13 +130,13 @@ public class UserFragment extends Fragment {
         // Establecer el tema actual según las preferencias guardadas
         int currentTheme = userViewModel.getThemeMode();
         switch (currentTheme) {
-            case UserViewModel.THEME_LIGHT:
+            case UserPreferencesManager.THEME_LIGHT:
                 binding.radioButtonLight.setChecked(true);
                 break;
-            case UserViewModel.THEME_DARK:
+            case UserPreferencesManager.THEME_DARK:
                 binding.radioButtonDark.setChecked(true);
                 break;
-            case UserViewModel.THEME_SYSTEM:
+            case UserPreferencesManager.THEME_SYSTEM:
             default:
                 binding.radioButtonSystem.setChecked(true);
                 break;
@@ -149,22 +144,22 @@ public class UserFragment extends Fragment {
 
         // Configurar listeners para los RadioButtons
         binding.radioButtonLight.setOnClickListener(v -> {
-            if (userViewModel.getThemeMode() != UserViewModel.THEME_LIGHT) {
-                userViewModel.setThemeMode(UserViewModel.THEME_LIGHT);
+            if (userViewModel.getThemeMode() != UserPreferencesManager.THEME_LIGHT) {
+                userViewModel.setThemeMode(UserPreferencesManager.THEME_LIGHT);
                 requireActivity().recreate();
             }
         });
 
         binding.radioButtonDark.setOnClickListener(v -> {
-            if (userViewModel.getThemeMode() != UserViewModel.THEME_DARK) {
-                userViewModel.setThemeMode(UserViewModel.THEME_DARK);
+            if (userViewModel.getThemeMode() != UserPreferencesManager.THEME_DARK) {
+                userViewModel.setThemeMode(UserPreferencesManager.THEME_DARK);
                 requireActivity().recreate();
             }
         });
 
         binding.radioButtonSystem.setOnClickListener(v -> {
-            if (userViewModel.getThemeMode() != UserViewModel.THEME_SYSTEM) {
-                userViewModel.setThemeMode(UserViewModel.THEME_SYSTEM);
+            if (userViewModel.getThemeMode() != UserPreferencesManager.THEME_SYSTEM) {
+                userViewModel.setThemeMode(UserPreferencesManager.THEME_SYSTEM);
                 requireActivity().recreate();
             }
         });

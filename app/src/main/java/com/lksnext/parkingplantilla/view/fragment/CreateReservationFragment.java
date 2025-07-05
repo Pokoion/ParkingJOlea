@@ -401,9 +401,9 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
         binding.parkingRowSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                String selectedRowSpinner = (String) parent.getItemAtPosition(position);
-                if (selectedRowSpinner != null && !selectedRowSpinner.equals(NO_DISPONIBLE)) {
-                    updateNumberSpinner(getFilteredNumbers(selectedRowSpinner));
+                if (parent.getItemAtPosition(position) != null &&
+                        !NO_DISPONIBLE.equals(parent.getItemAtPosition(position).toString())) {
+                    updateNumberSpinner(getFilteredNumbers(parent.getItemAtPosition(position).toString()));
                 } else {
                     updateNumberSpinner(new ArrayList<>());
                 }

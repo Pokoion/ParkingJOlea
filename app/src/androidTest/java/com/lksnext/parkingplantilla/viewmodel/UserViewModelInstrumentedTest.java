@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.lksnext.parkingplantilla.ParkingApplication;
 import com.lksnext.parkingplantilla.data.DataRepository;
+import com.lksnext.parkingplantilla.data.UserPreferencesManager;
 import com.lksnext.parkingplantilla.utils.LiveDataTestUtil;
 
 import org.junit.After;
@@ -37,35 +38,35 @@ public class UserViewModelInstrumentedTest {
         repository = ParkingApplication.getInstance().getRepository();
         viewModel = new UserViewModel(repository);
         // Limpia preferencias de tema antes de cada test
-        SharedPreferences prefs = context.getSharedPreferences(UserViewModel.PREF_NAME, 0);
+        SharedPreferences prefs = context.getSharedPreferences(UserPreferencesManager.PREF_NAME, 0);
         prefs.edit().clear().commit();
     }
 
     @After
     public void tearDown() {
         // Limpia preferencias de tema después de cada test
-        SharedPreferences prefs = context.getSharedPreferences(UserViewModel.PREF_NAME, 0);
+        SharedPreferences prefs = context.getSharedPreferences(UserPreferencesManager.PREF_NAME, 0);
         prefs.edit().clear().commit();
     }
 
     @Test
     public void themeMode_setAndGet() {
-        viewModel.setThemeMode(UserViewModel.THEME_DARK);
+        viewModel.setThemeMode(UserPreferencesManager.THEME_DARK);
         int mode = viewModel.getThemeMode();
-        assertEquals(UserViewModel.THEME_DARK, mode);
-        viewModel.setThemeMode(UserViewModel.THEME_LIGHT);
+        assertEquals(UserPreferencesManager.THEME_DARK, mode);
+        viewModel.setThemeMode(UserPreferencesManager.THEME_LIGHT);
         mode = viewModel.getThemeMode();
-        assertEquals(UserViewModel.THEME_LIGHT, mode);
-        viewModel.setThemeMode(UserViewModel.THEME_SYSTEM);
+        assertEquals(UserPreferencesManager.THEME_LIGHT, mode);
+        viewModel.setThemeMode(UserPreferencesManager.THEME_SYSTEM);
         mode = viewModel.getThemeMode();
-        assertEquals(UserViewModel.THEME_SYSTEM, mode);
+        assertEquals(UserPreferencesManager.THEME_SYSTEM, mode);
     }
 
     @Test
     public void applyTheme_persistsPreference() {
-        viewModel.applyTheme(UserViewModel.THEME_DARK);
+        viewModel.applyTheme(UserPreferencesManager.THEME_DARK);
         int mode = viewModel.getThemeMode();
-        assertEquals(UserViewModel.THEME_DARK, mode);
+        assertEquals(UserPreferencesManager.THEME_DARK, mode);
     }
 
     @Test

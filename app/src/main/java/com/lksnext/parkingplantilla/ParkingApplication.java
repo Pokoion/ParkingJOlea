@@ -7,9 +7,9 @@ import android.content.SharedPreferences;
 import androidx.appcompat.app.AppCompatDelegate;
 
 import com.lksnext.parkingplantilla.data.DataRepository;
+import com.lksnext.parkingplantilla.data.UserPreferencesManager;
 import com.lksnext.parkingplantilla.data.firebase.FirebaseDataSource;
 import com.lksnext.parkingplantilla.data.repository.DataSource;
-import com.lksnext.parkingplantilla.viewmodel.UserViewModel;
 
 public class ParkingApplication extends Application {
 
@@ -27,14 +27,14 @@ public class ParkingApplication extends Application {
 
     private void applyStoredTheme() {
         SharedPreferences prefs = getSharedPreferences(
-                UserViewModel.PREF_NAME, Context.MODE_PRIVATE);
-        int themeMode = prefs.getInt(UserViewModel.PREF_THEME, UserViewModel.THEME_SYSTEM);
+                UserPreferencesManager.PREF_NAME, Context.MODE_PRIVATE);
+        int themeMode = prefs.getInt(UserPreferencesManager.PREF_THEME, UserPreferencesManager.THEME_SYSTEM);
 
         switch (themeMode) {
-            case UserViewModel.THEME_LIGHT:
+            case UserPreferencesManager.THEME_LIGHT:
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
                 break;
-            case UserViewModel.THEME_DARK:
+            case UserPreferencesManager.THEME_DARK:
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
                 break;
             default:

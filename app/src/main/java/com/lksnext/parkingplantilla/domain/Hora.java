@@ -1,7 +1,5 @@
 package com.lksnext.parkingplantilla.domain;
 
-import com.lksnext.parkingplantilla.utils.DateUtils;
-
 import androidx.annotation.NonNull;
 
 public class Hora {
@@ -37,6 +35,10 @@ public class Hora {
     @NonNull
     @Override
     public String toString() {
-        return DateUtils.formatTimeFromMs(horaInicio) + " - " + DateUtils.formatTimeFromMs(horaFin);
+        int inicioHoras = (int) (horaInicio / 3600000);
+        int inicioMin = (int) ((horaInicio % 3600000) / 60000);
+        int finHoras = (int) (horaFin / 3600000);
+        int finMin = (int) ((horaFin % 3600000) / 60000);
+        return String.format(java.util.Locale.getDefault(), "%02d:%02d - %02d:%02d", inicioHoras, inicioMin, finHoras, finMin);
     }
 }

@@ -14,6 +14,12 @@ public class UserPreferencesManager {
     private static final String FIRST_TIME_USER_FRAGMENT_KEY = "first_time_user_fragment";
     private static final String START_REMINDER_ENABLED_KEY = "start_reminder_enabled";
     private static final String END_REMINDER_ENABLED_KEY = "end_reminder_enabled";
+    public static final int THEME_LIGHT = 1;
+    public static final int THEME_DARK = 2;
+    public static final int THEME_SYSTEM = 3;
+
+    public static final String PREF_NAME = "theme_preferences";
+    public static final String PREF_THEME = "selected_theme";
 
     private final SharedPreferences sharedPreferences;
 

@@ -53,7 +53,7 @@ public class ChangePassViewModelInstrumentedTest {
     public void sendPasswordResetEmail_success() throws Exception {
         viewModel.sendPasswordResetEmail(TEST_EMAIL);
         String status = LiveDataTestUtil.getValue(viewModel.getStatusMessage());
-        Boolean loading = LiveDataTestUtil.getValue(viewModel.getIsLoading());
+        Boolean loading = LiveDataTestUtil.getOrAwaitValue(viewModel.getIsLoading(), Boolean.FALSE);
         assertEquals("Correo de recuperación enviado. Revisa tu bandeja de entrada.", status);
         assertNotEquals(Boolean.TRUE, loading);
     }
@@ -63,7 +63,7 @@ public class ChangePassViewModelInstrumentedTest {
         String fakeEmail = "noexistechangepass@example.com";
         viewModel.sendPasswordResetEmail(fakeEmail);
         String status = LiveDataTestUtil.getValue(viewModel.getStatusMessage());
-        Boolean loading = LiveDataTestUtil.getValue(viewModel.getIsLoading());
+        Boolean loading = LiveDataTestUtil.getOrAwaitValue(viewModel.getIsLoading(), Boolean.FALSE);
         assertEquals("El email no está registrado.", status);
         assertNotEquals(Boolean.TRUE, loading);
     }
