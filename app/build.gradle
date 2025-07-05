@@ -40,7 +40,6 @@ android {
             }
         }
 
-        // ❗ Excluir globalmente protobuf-lite para evitar conflicto con protobuf-javalite
         exclude group: "com.google.protobuf", module: "protobuf-lite"
     }
 }
@@ -55,7 +54,6 @@ dependencies {
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'androidx.cardview:cardview:1.0.0'
 
-    // ❗ Excluye protobuf-lite de esta lib también
     implementation("androidx.work:work-runtime:2.9.0") {
         exclude group: "com.google.protobuf", module: "protobuf-lite"
     }
@@ -65,7 +63,6 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-firestore'
 
-    // ✅ Añade explícitamente protobuf-javalite
     implementation "com.google.protobuf:protobuf-javalite:3.25.5"
 
     implementation 'androidx.test.espresso:espresso-contrib:3.6.1'
@@ -106,7 +103,7 @@ sonarqube {
         property "sonar.organization", "pokoion"
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.sources", "src/main/java"
-        property "sonar.tests", "src/test/java"
+        property "sonar.tests", "src/test/java,src/androidTest/java"
         property "sonar.gradle.skipCompile", "false"
         property "sonar.verbose", "true"
         property "sonar.java.source", "17"
