@@ -52,7 +52,7 @@ La intención era automatizar también la ejecución de los tests instrumentados
 
 1. Clona este repositorio:
    ```
-   git clone https://github.com/tuusuario/ParkingJOlea.git
+   git clone https://github.com/Pokoion/ParkingJOlea.git
    ```
 2. Abre el proyecto en Android Studio.
 3. Sincroniza el proyecto con Gradle.
