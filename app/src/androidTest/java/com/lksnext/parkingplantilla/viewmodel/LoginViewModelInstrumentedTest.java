@@ -25,28 +25,25 @@ public class LoginViewModelInstrumentedTest {
 
     private LoginViewModel viewModel;
     private DataRepository repository;
-
-    private static final String TEST_EMAIL = "login_test_user@example.com";
-    private static final String TEST_PASSWORD = "Test1234!";
-    private static final String TEST_NAME = "Login Test";
+    private static final String TEST_EMAIL = "test_user@example.com";
+    private static final String TEST_PASSWORD = "123456";
     private static final int TIMEOUT = 10;
 
     @Before
     public void setUp() throws Exception {
         repository = ParkingApplication.getInstance().getRepository();
         viewModel = new LoginViewModel(repository);
+        // Solo login, el usuario ya debe existir
         CountDownLatch latch = new CountDownLatch(1);
-        repository.register(TEST_NAME, TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
+        repository.login(TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         repository.logout();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         viewModel.logout();
-        CountDownLatch latch = new CountDownLatch(1);
-        repository.deleteUser(TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        // No se borra el usuario de test
     }
 
     @Test
@@ -126,6 +123,7 @@ public class LoginViewModelInstrumentedTest {
 
     @Test
     public void register_and_login_flow() throws Exception {
+        viewModel.logout();
         String newEmail = "nuevo_login_test@example.com";
         String newPassword = "Test5678!";
         String newName = "Nuevo Test";
@@ -148,3 +146,4 @@ public class LoginViewModelInstrumentedTest {
         latch2.await(TIMEOUT, TimeUnit.SECONDS);
     }
 }
+

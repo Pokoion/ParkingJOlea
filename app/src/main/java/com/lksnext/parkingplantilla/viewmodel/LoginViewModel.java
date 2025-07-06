@@ -71,6 +71,7 @@ public class LoginViewModel extends ViewModel {
 
         if (!validateLoginFields(email, password)) {
             isLoading.setValue(false);
+            logged.setValue(false);
             return;
         }
 

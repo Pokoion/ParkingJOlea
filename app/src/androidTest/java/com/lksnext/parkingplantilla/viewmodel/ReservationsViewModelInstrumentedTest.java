@@ -27,9 +27,8 @@ public class ReservationsViewModelInstrumentedTest {
     private ReservationsViewModel viewModel;
     private DataRepository repository;
 
-    private static final String TEST_EMAIL = "test_load_user@example.com";
-    private static final String TEST_PASSWORD = "Test1234!";
-    private static final String TEST_NAME = "Test Load User";
+    private static final String TEST_EMAIL = "test_user@example.com";
+    private static final String TEST_PASSWORD = "123456";
     private static final String PLAZA_ID = "TEST-1";
     private static final String PLAZA_TIPO = Plaza.TIPO_STANDARD;
     private static final String FECHA_HOY = DateUtils.formatDateForApi(Calendar.getInstance());
@@ -87,15 +86,11 @@ public class ReservationsViewModelInstrumentedTest {
     public void setUp() throws Exception {
         repository = ParkingApplication.getInstance().getRepository();
         viewModel = new ReservationsViewModel(repository);
-        // Registrar usuario
+        // Login únicamente, el usuario ya debe existir
         CountDownLatch latch = new CountDownLatch(1);
-        repository.register(TEST_NAME, TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
-        latch.await();
-        // Login
-        latch = new CountDownLatch(1);
         repository.login(TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
         latch.await();
-        // Crear plaza
+        // Crear plaza si no existe (intenta crear, ignora error si ya existe)
         testPlaza = new Plaza(PLAZA_ID, PLAZA_TIPO);
         latch = new CountDownLatch(1);
         repository.addPlaza(testPlaza, new LatchCallback<>(latch));
@@ -105,16 +100,14 @@ public class ReservationsViewModelInstrumentedTest {
 
     @After
     public void tearDown() throws Exception {
-        // Borrar todas las reservas del usuario antes de eliminar usuario y plaza
+        // Borrar todas las reservas del usuario antes de eliminar la plaza
         CountDownLatch latch = new CountDownLatch(1);
         repository.deleteUserReservations(TEST_EMAIL, new LatchCallback<>(latch));
         latch.await();
         latch = new CountDownLatch(1);
-        repository.deleteUser(TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
-        latch.await();
-        latch = new CountDownLatch(1);
         repository.deletePlaza(PLAZA_ID, new LatchCallback<>(latch));
         latch.await();
+        // Ya no se borra el usuario de test
     }
 
     @Test

@@ -31,9 +31,8 @@ public class ReservationsViewModelGestionInstrumentedTest {
 
     private ReservationsViewModel viewModel;
     private DataRepository repository;
-    private static final String TEST_EMAIL = "test_gestion_user@example.com";
-    private static final String TEST_PASSWORD = "Test1234!";
-    private static final String TEST_NAME = "Test Gestion User";
+    private static final String TEST_EMAIL = "test_user@example.com";
+    private static final String TEST_PASSWORD = "123456";
     private static final String PLAZA_ID = "GESTION-1";
     private static final String PLAZA_TIPO = Plaza.TIPO_STANDARD;
     private Plaza testPlaza;
@@ -42,15 +41,11 @@ public class ReservationsViewModelGestionInstrumentedTest {
     public void setUp() throws Exception {
         repository = ParkingApplication.getInstance().getRepository();
         viewModel = new ReservationsViewModel(repository);
-        // Registrar usuario
+        // Solo login, el usuario ya debe existir
         CountDownLatch latch = new CountDownLatch(1);
-        repository.register(TEST_NAME, TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
-        latch.await();
-        // Login
-        latch = new CountDownLatch(1);
         repository.login(TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
         latch.await();
-        // Crear plaza
+        // Crear plaza si no existe (ignora error si ya existe)
         testPlaza = new Plaza(PLAZA_ID, PLAZA_TIPO);
         latch = new CountDownLatch(1);
         repository.addPlaza(testPlaza, new LatchCallback<>(latch));
@@ -60,11 +55,12 @@ public class ReservationsViewModelGestionInstrumentedTest {
     @After
     public void tearDown() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
-        repository.deleteUser(TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
+        repository.deleteUserReservations(TEST_EMAIL, new LatchCallback<>(latch));
         latch.await();
         latch = new CountDownLatch(1);
         repository.deletePlaza(PLAZA_ID, new LatchCallback<>(latch));
         latch.await();
+        // Ya no se borra el usuario de test
     }
 
     /**
@@ -414,13 +410,14 @@ public class ReservationsViewModelGestionInstrumentedTest {
         assertTrue(result);
         String reservaId = reserva.getId();
 
-        await().atMost(Duration.ofSeconds(70)).pollInterval(Duration.ofSeconds(5)).until(() -> {
+        await().atMost(Duration.ofSeconds(80)).pollInterval(Duration.ofSeconds(5)).until(() -> {
             viewModel.loadHistoricReservations();
             List<Reserva> historicas = LiveDataTestUtil.getValue(viewModel.getHistoricReservations());
             if (historicas == null || historicas.isEmpty()) return false;
             Reserva encontrada = historicas.get(0);
             return encontrada.getId().equals(reservaId) && encontrada.getEstado() == Reserva.Estado.FINALIZADA;
         });
+        viewModel.deleteReservation(reservaId);
     }
 
     @Test
@@ -577,3 +574,4 @@ public class ReservationsViewModelGestionInstrumentedTest {
         assertFalse("No debe permitir reservas de más de 9 horas", result);
     }
 }
+

@@ -49,6 +49,7 @@ public class RegisterViewModelInstrumentedTest {
         CountDownLatch latch = new CountDownLatch(1);
         repository.deleteUser(TEST_EMAIL, TEST_PASSWORD, new LatchCallback<>(latch));
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        repository.logout();
     }
 
     @Test
