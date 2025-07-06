@@ -35,7 +35,7 @@ public class CreateReservationFormResetTest {
     @Before
     public void loginBeforeTest() {
         EspressoTestUtils.waitForActivity(LoginActivity.class, 5000);
-        onView(withId(R.id.emailText)).perform(typeText("jonoolea@gmail.com"), closeSoftKeyboard());
+        onView(withId(R.id.emailText)).perform(typeText("test_user@example.com"), closeSoftKeyboard());
         onView(withId(R.id.passwordText)).perform(typeText("123456"), closeSoftKeyboard());
         onView(withId(R.id.loginButton)).perform(click());
         EspressoTestUtils.waitForActivity(MainActivity.class, 5000);
