@@ -31,6 +31,12 @@ ParkingJOlea es una aplicación Android desarrollada como proyecto de aula de em
   - `drawable/`, `mipmap-*`: Recursos gráficos.
   - `values/`: Strings, estilos y colores.
 
+## CI/CD y calidad del código
+
+El proyecto utiliza **GitHub Actions** para CI/CD, integrando análisis de calidad con **SonarCloud** en cada push y pull request. Esto permite monitorizar la calidad del código de forma continua.
+
+La intención era automatizar también la ejecución de los tests instrumentados (`androidTest`) en el pipeline, pero actualmente no se ha conseguido debido a las limitaciones para lanzar emuladores Android en GitHub Actions. Por tanto, los tests deben ejecutarse manualmente desde Android Studio.
+
 ## Requisitos técnicos
 
 - Android Studio (recomendado versión Hedgehog o superior)
