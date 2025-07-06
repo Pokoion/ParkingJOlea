@@ -1,5 +1,7 @@
 # ParkingJOlea
 
+[![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=Pokoion_ParkingJOlea&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Pokoion_ParkingJOlea)
+
 ParkingJOlea es una aplicación Android desarrollada como proyecto de aula de empresa para LKS. El objetivo de la app es gestionar reservas de plazas de parking para trabajadores de Zuatzu, permitiendo la autenticación de usuarios, la creación y gestión de reservas, y la visualización del histórico y reservas actuales.
 
 ## Características principales
