@@ -189,7 +189,7 @@ public class FirebaseDataSource implements DataSource {
     public void createReservation(Reserva reserva, DataCallback<Boolean> callback) {
         long now = System.currentTimeMillis();
         java.util.Date reservaStart = DateUtils.getReservaDateTime(reserva);
-        if (reservaStart.getTime() < now - 2 * 60 * 1000) {
+        if (reserva.getFecha().equals(DateUtils.getCurrentDateForApi()) && reservaStart.getTime() < now - 2 * 60 * 1000) {
             callback.onFailure(new Exception("La hora de inicio no puede ser más de 2 minutos anterior al momento actual"));
             return;
         }

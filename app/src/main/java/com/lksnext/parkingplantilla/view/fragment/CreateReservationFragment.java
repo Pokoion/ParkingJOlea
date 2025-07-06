@@ -349,13 +349,16 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
     }
 
     private void onNextStep() {
-        // Validar margen de 2 minutos respecto a la hora actual
-        Calendar now = Calendar.getInstance();
-        Calendar minStart = (Calendar) now.clone();
-        minStart.add(Calendar.MINUTE, -2);
-        if (startTime.before(minStart)) {
-            Toast.makeText(requireContext(), "La hora de inicio no puede ser más de 2 minutos anterior al momento actual", Toast.LENGTH_LONG).show();
-            return;
+        // Validar margen de 2 minutos solo si la reserva es para hoy
+        String selectedApiDate = DateUtils.formatDateForApi(selectedDate);
+        if (selectedApiDate.equals(DateUtils.getCurrentDateForApi())) {
+            Calendar now = Calendar.getInstance();
+            Calendar minStart = (Calendar) now.clone();
+            minStart.add(Calendar.MINUTE, -2);
+            if (startTime.before(minStart)) {
+                Toast.makeText(requireContext(), "La hora de inicio no puede ser más de 2 minutos anterior al momento actual", Toast.LENGTH_LONG).show();
+                return;
+            }
         }
         // Guardar selección temporal antes de navegar
         viewModel.saveTempSelection(selectedType, selectedDate, startTime, endTime, reservationId);
@@ -589,7 +592,7 @@ public class CreateReservationFragment extends Fragment implements ReservationTy
                 if (result != null && result) {
                     viewModel.clearTempSelection();
                     Toast.makeText(requireContext(), "Reserva actualizada correctamente", Toast.LENGTH_SHORT).show();
-                    Navigation.findNavController(requireActivity(), R.id.flFragment).popBackStack(getReturnFragmentId(), false);
+                    Navigation.findNavController(requireActivity(), R.id.flFragment).navigateUp();
                 } else {
                     Toast.makeText(requireContext(), "Error al actualizar la reserva", Toast.LENGTH_SHORT).show();
                 }
