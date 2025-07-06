@@ -44,15 +44,18 @@ jobs:
       - name: Give execute permission to Gradle wrapper
         run: chmod +x ./gradlew
 
-      - name: Run Android Instrumentation Tests and Sonar
-        uses: reactivecircus/android-emulator-runner@v2
+      - name: Build app and test APKs
+        run: ./gradlew assembleDebug assembleAndroidTest
+
+      - name: Run Android instrumentation tests on emulator
+        uses: emulator-wtf/run-tests@v0
         with:
-          api-level: ${{ matrix.api-level }}
-          target: ${{ matrix.target }}
-          arch: x86_64
-          profile: pixel
-          script: |
-            ./gradlew connectedDebugAndroidTest
-            ./gradlew sonar --no-daemon --info
+          api-token: ${{ secrets.EW_API_TOKEN }}
+          app: app/build/outputs/apk/debug/app-debug.apk
+          test: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          outputs-dir: build/test-results
+
+      - name: Run Sonar analysis
+        run: ./gradlew sonar --no-daemon --info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
