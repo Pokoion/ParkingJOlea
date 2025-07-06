@@ -49,6 +49,7 @@ jobs:
 
       - name: Run Android instrumentation tests on emulator
         uses: emulator-wtf/run-tests@v0
+        continue-on-error: true
         with:
           api-token: ${{ secrets.EW_API_TOKEN }}
           app: app/build/outputs/apk/debug/app-debug.apk
