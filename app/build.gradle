@@ -21,9 +21,6 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-        debug {
-            testCoverageEnabled true
-        }
     }
 
     buildFeatures {
@@ -107,7 +104,6 @@ sonarqube {
         property "sonar.host.url", "https://sonarcloud.io"
         property "sonar.sources", "src/main/java"
         property "sonar.tests", "src/androidTest/java"
-        property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/coverage/androidTest/debug/connected/report.xml"
         property "sonar.gradle.skipCompile", "false"
         property "sonar.verbose", "true"
         property "sonar.java.source", "17"
